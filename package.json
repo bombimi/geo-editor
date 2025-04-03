@@ -20,7 +20,7 @@
         "tsbuild": "tsc",
         "tsbuild:watch": "tsc --watch",
         "clean": "rimraf ./dist/*",
-        "build:lib": "yarn run rollup -c",
+        "build:ci": "yarn run rollup -c",
         "build:dev": "yarn run rollup -c --config-dev",
         "watch:dev": "npm-watch build:dev",
         "serve:dev": "wds --root-dir ./site/ --watch",

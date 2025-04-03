@@ -1,0 +1,55 @@
+# spell-checker: disable
+name: Build and publish site
+on:
+    push:
+        branches:
+            - main
+jobs:
+    run:
+        runs-on: ubuntu-latest
+        env:
+            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            JEKYLL_ENV: production
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  # Fetch all history for generating release notes
+                  fetch-depth: 0
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: "20.17.0"
+                  cache: "yarn"
+
+            # Restore Yarn cache and install dependencies
+            - name: Get yarn cache directory path
+              id: yarn_path_cache
+              run: echo "YARN_PATH_CACHE=$(yarn cache dir)" >> $GITHUB_ENV
+
+            - name: Cache yarn dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ${{ env.YARN_PATH_CACHE}}
+                  key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-yarn-
+
+            - name: Install dependencies
+              run: yarn
+
+            # - name: Generate release notes
+            #   run: yarn generate-release-notes
+
+            - name: Build
+              env:
+                  NODE_OPTIONS: "--max_old_space_size=4096"
+              run: yarn build:ci
+
+            # - name: Deploy caveDB app
+            #   uses: lbertenasco/s3-deploy@v1
+            #   with:
+            #       folder: ./.site/cavedb
+            #       bucket: app.cavedb.net
+            #       dist-id: E2TMOYFVU2PLD7
+            #       invalidation: /*
