@@ -10,8 +10,8 @@ export abstract class Command {
 
     public abstract execute(
         document: Document,
-        selection: SelectionSet,
-        manipulator: Manipulator
+        selection: SelectionSet | null,
+        manipulator: Manipulator | null
     ): void;
 
     public abstract undo(): void;

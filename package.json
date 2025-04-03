@@ -31,7 +31,9 @@
         "test:prod:watch": "MODE=prod wtr --watch",
         "codegen": "node ./templates/generate.js "
     },
-    "dependencies": {},
+    "dependencies": {
+        "@mapbox/togeojson": "^0.16.2"
+    },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^25.0.7",
         "@rollup/plugin-json": "^6.1.0",

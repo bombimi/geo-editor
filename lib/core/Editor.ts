@@ -1,5 +1,7 @@
 import { UndoBuffer } from "./UndoBuffer";
 import { Command } from "./Command";
+import { SelectionSet } from "./SelectionSet";
+import { Manipulator } from "./Manipulator";
 
 export abstract class DocumentProvider {
     public abstract fileTypes(): string[];
@@ -7,10 +9,16 @@ export abstract class DocumentProvider {
 }
 
 export class Editor {
-    private UndoBuffer = new UndoBuffer();
+    private _undoBuffer = new UndoBuffer();
+    private _document: Document | null = null;
+    private _selectionSet: SelectionSet = new SelectionSet();
+    private _currentManipulator: Manipulator | null = null;
 
     public applyCommand(command: Command) {
-        this.UndoBuffer.push(command);
-        command.execute();
+        if (this._document === null) {
+            throw new Error("No document loaded.");
+        }
+        command.execute(this._document, this._selectionSet, this._currentManipulator);
+        this._undoBuffer.push(command);
     }
 }

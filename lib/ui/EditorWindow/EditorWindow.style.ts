@@ -43,4 +43,34 @@ export const styles = css`
         width: 100%;
         height: 100%;
     }
+
+    .top-left-controls {
+        position: absolute;
+        left: 1em;
+        top: 1em;
+    }
+
+    .top-right-controls {
+        position: absolute;
+        display: flex;
+        gap: 0.5em;
+        right: 1em;
+        top: 1em;
+    }
+
+    .side-right-controls {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5em;
+        right: 1em;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    sl-icon-button {
+        font-size: 2rem;
+        border: 1px solid var(--sl-color-neutral-400);
+        background-color: var(--sl-color-neutral-0);
+    }
 `;
