@@ -1,0 +1,15 @@
+{
+    "tabWidth": 4,
+    "useTabs": false,
+    "printWidth": 100,
+    "plugins": ["prettier-plugin-go-template"],
+    "trailingComma": "es5",
+    "overrides": [
+        {
+            "files": ["website/**/*.html"],
+            "options": {
+                "parser": "go-template"
+            }
+        }
+    ]
+}

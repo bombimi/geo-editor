@@ -1,3 +1,5 @@
+.tsbuild
+
 # Logs
 logs
 *.log

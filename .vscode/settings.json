@@ -1,0 +1,13 @@
+{
+    "cSpell.words": ["codegen"],
+    "restoreTerminals.terminals": [
+        {
+            "splitTerminals": [
+                {
+                    "name": "Build",
+                    "commands": ["yarn run watch:lib"]
+                }
+            ]
+        }
+    ]
+}
