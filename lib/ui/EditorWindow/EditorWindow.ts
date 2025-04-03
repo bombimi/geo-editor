@@ -40,6 +40,8 @@ export class EditorWindow extends BaseElement {
                 <sl-button-group>
                     <sl-icon-button name="plus"></sl-icon-button>
                     <sl-icon-button name="dash-lg"></sl-icon-button>
+                    <sl-icon-button name="arrow-counterclockwise"></sl-icon-button>
+                    <sl-icon-button name="arrow-clockwise"></sl-icon-button>
                 </sl-button-group>
                 <sl-button size="large">Sign in</sl-button>
             </div>
@@ -47,7 +49,7 @@ export class EditorWindow extends BaseElement {
                 <sl-icon-button name="geo-alt"></sl-icon-button>
                 <sl-icon-button src="/images/line.svg"></sl-icon-button>
                 <sl-icon-button src="/images/polygon.svg"></sl-icon-button>
-                <sl-icon-button name="bounding-box-circles"></sl-icon-button>
+                <sl-icon-button src="/images/rectangle.svg"></sl-icon-button>
                 <sl-icon-button name="circle"></sl-icon-button>
             </div>
         </div>`;

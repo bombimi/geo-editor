@@ -17,7 +17,15 @@ if (DEV_MODE) {
 }
 
 const SHOELACE_ASSET_ROOT = "node_modules/@shoelace-style/shoelace/dist/assets/icons";
-const SHOELACE_ICONS = ["plus", "dash-lg", "geo-alt", "bounding-box-circles", "circle"];
+const SHOELACE_ICONS = [
+    "plus",
+    "dash-lg",
+    "geo-alt",
+    "bounding-box-circles",
+    "circle",
+    "arrow-counterclockwise",
+    "arrow-clockwise",
+];
 
 function getShoelaceIconTargets(destDir) {
     return SHOELACE_ICONS.map((x) => {
