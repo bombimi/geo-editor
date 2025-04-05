@@ -29,7 +29,7 @@ function defaultMapConfigKeys(): MapConfigKeys {
 function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
     return {
         map: {
-            zoom: 1,
+            zoom: 2,
             center: [0, 0],
             pitch: 0,
             bearing: 0,

@@ -5,7 +5,7 @@ import "@shoelace-style/shoelace/dist/components/dropdown/dropdown.js";
 import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
 
-import { html } from "lit";
+import { html, PropertyValues } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { BaseElement } from "../BaseElement";
@@ -48,13 +48,35 @@ export class EditorWindow extends BaseElement {
         // });
     }
 
+    protected override firstUpdated(_changedProperties: PropertyValues): void {
+        super.firstUpdated(_changedProperties);
+
+        // load the last document from local storage if it exists
+        const lastDoc = window.localStorage.getItem("lastDocument");
+        const lastDocName = window.localStorage.getItem("lastDocumentName");
+        const lastDocMimeType = window.localStorage.getItem("lastDocumentMimeType");
+        const lastDocProvider = window.localStorage.getItem("lastDocumentProvider");
+        if (lastDoc && lastDocName && lastDocMimeType && lastDocProvider) {
+            const provider = this._editor.providers.find((p) => p.id === lastDocProvider);
+            if (provider) {
+                const blob = new Blob([lastDoc], { type: lastDocMimeType });
+                this._openFile(provider, blob, lastDocName);
+            }
+        }
+    }
+
     private _toggleDarkMode() {
         this._darkMode = !this._darkMode;
         document.getElementsByTagName("body")[0]?.classList.toggle("sl-theme-dark");
         this.requestUpdate();
     }
 
-    private _openFile(provider: DocumentProvider) {
+    private async _openFile(provider: DocumentProvider, blob: Blob, name: string) {
+        this._document = this._editor.document = await provider.openDocument(blob, name);
+        return this._document;
+    }
+
+    private _promptForFile(provider: DocumentProvider) {
         const input = Object.assign(document.createElement("input"), {});
 
         input.id = "media-import-input";
@@ -68,8 +90,13 @@ export class EditorWindow extends BaseElement {
 
         input.addEventListener("change", async () => {
             if (input.files) {
-                const file = await provider.openDocument(input.files[0], input.files[0].name);
-                this._document = this._editor.document = file;
+                if (await this._openFile(provider, input.files[0], input.files[0].name)) {
+                    const text = await input.files[0].text();
+                    window.localStorage.setItem("lastDocument", text);
+                    window.localStorage.setItem("lastDocumentProvider", provider.id);
+                    window.localStorage.setItem("lastDocumentName", input.files[0].name);
+                    window.localStorage.setItem("lastDocumentMimeType", input.files[0].type);
+                }
             }
             document.body.removeChild(input);
         });
@@ -101,7 +128,7 @@ export class EditorWindow extends BaseElement {
                                 (provider) =>
                                     html`<sl-menu-item
                                         value="open"
-                                        @click=${() => this._openFile(provider)}
+                                        @click=${() => this._promptForFile(provider)}
                                         >${provider.name}</sl-menu-item
                                     >`
                             )}

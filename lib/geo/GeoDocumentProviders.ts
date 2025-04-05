@@ -3,6 +3,9 @@ import { DocumentProvider } from "../core/DocumentProvider";
 import { GeoDocument } from "./GeoDocument";
 
 export class GeoDocumentProviderKml extends DocumentProvider {
+    constructor() {
+        super("f2862481-259f-4815-9269-730ca5dc0af0");
+    }
     public get name(): string {
         return "KML";
     }
@@ -11,14 +14,18 @@ export class GeoDocumentProviderKml extends DocumentProvider {
         return ["kml"];
     }
 
-    public async openDocument(file: File, name: string): Promise<Document> {
+    public async openDocument(blob: Blob, name: string): Promise<Document> {
         const doc = new GeoDocument();
-        await doc.open(file, "kml", name);
+        await doc.open(blob, "kml", name);
         return doc;
     }
 }
 
 export class GeoDocumentProviderGeoJson extends DocumentProvider {
+    constructor() {
+        super("1ffc0066-c5ac-43c8-ab46-2b11523371e1");
+    }
+
     public get name(): string {
         return "Geo JSON";
     }
@@ -26,14 +33,17 @@ export class GeoDocumentProviderGeoJson extends DocumentProvider {
         return ["geojson", "json"];
     }
 
-    public async openDocument(file: File, name: string): Promise<Document> {
+    public async openDocument(blob: Blob, name: string): Promise<Document> {
         const doc = new GeoDocument();
-        await doc.open(file, "geojson", name);
+        await doc.open(blob, "geojson", name);
         return doc;
     }
 }
 
 export class GeoDocumentProviderGpx extends DocumentProvider {
+    constructor() {
+        super("995924bf-f45e-40a4-9543-13da36e63088");
+    }
     public get name(): string {
         return "GPX";
     }
@@ -41,9 +51,9 @@ export class GeoDocumentProviderGpx extends DocumentProvider {
         return ["gpx"];
     }
 
-    public async openDocument(file: File, name: string): Promise<Document> {
+    public async openDocument(blob: Blob, name: string): Promise<Document> {
         const doc = new GeoDocument();
-        await doc.open(file, "gpx", name);
+        await doc.open(blob, "gpx", name);
         return doc;
     }
 }
