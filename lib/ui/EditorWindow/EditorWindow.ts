@@ -6,7 +6,7 @@ import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
 
 import { html, PropertyValues } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { keyed } from "lit/directives/keyed.js";
 import { BaseElement } from "../BaseElement";
 
@@ -26,6 +26,8 @@ export class EditorWindow extends BaseElement {
     @state() protected _hasUndo = false;
     @state() protected _hasRedo = false;
     @state() protected _darkMode = true;
+
+    @query("ds-document-renderer") protected _documentRenderer?: DocumentRenderer;
 
     constructor() {
         super();
@@ -147,10 +149,12 @@ export class EditorWindow extends BaseElement {
                     <sl-icon-button
                         name="plus"
                         ?disabled=${this._document === null}
+                        @click=${() => this._documentRenderer?.zoomIn()}
                     ></sl-icon-button>
                     <sl-icon-button
                         name="dash-lg"
                         ?disabled=${this._document === null}
+                        @click=${() => this._documentRenderer?.zoomOut()}
                     ></sl-icon-button>
                     <sl-icon-button
                         name="arrow-counterclockwise"

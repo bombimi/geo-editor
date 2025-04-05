@@ -29,7 +29,7 @@ function defaultMapConfigKeys(): MapConfigKeys {
 function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
     return {
         map: {
-            zoom: 2,
+            zoom: 3,
             center: [0, 0],
             pitch: 0,
             bearing: 0,
@@ -63,6 +63,18 @@ export class Map extends LitElement {
     @watch("_cssLoaded")
     _onCssLoaded() {
         this._initMap();
+    }
+
+    public zoomIn() {
+        if (this._map) {
+            this._map.zoomIn();
+        }
+    }
+
+    public zoomOut() {
+        if (this._map) {
+            this._map.zoomOut();
+        }
     }
 
     private _initMap() {
