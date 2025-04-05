@@ -4,23 +4,34 @@ import { SelectionSet } from "./SelectionSet";
 import { Modifier } from "./Modifier";
 import { getGeoDocumentProviders } from "../geo/GeoDocumentProviders";
 import { Document } from "./Document";
+import { editorManager } from "./EditorManager";
 
 export class Editor {
+    public readonly guid: string = crypto.randomUUID();
     private _providers = getGeoDocumentProviders();
     private _undoBuffer = new UndoBuffer();
     private _document: Document | null = null;
     private _selectionSet: SelectionSet = new SelectionSet();
     private _currentManipulator: Modifier | null = null;
 
-    public get providers() {
+    constructor(document: Document) {
+        this._document = document;
+        editorManager.add(this);
+    }
+
+    get document() {
+        return this._document;
+    }
+
+    dispose() {
+        editorManager.remove(this);
+    }
+
+    get providers() {
         return this._providers;
     }
 
-    public set document(document: Document | null) {
-        this._document = document;
-    }
-
-    public applyCommand(command: Command) {
+    applyCommand(command: Command) {
         if (this._document === null) {
             throw new Error("No document loaded.");
         }

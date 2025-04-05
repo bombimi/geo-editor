@@ -97,4 +97,17 @@ export const styles = css`
         border: 1px solid var(--sl-color-neutral-400);
         background-color: var(--sl-color-neutral-0);
     }
+
+    .left-panels {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5em;
+        left: 1em;
+        top: 5em;
+        bottom: 6em;
+        width: 20em;
+        background-color: var(--sl-color-neutral-200);
+        border-radius: 0.5em;
+    }
 `;

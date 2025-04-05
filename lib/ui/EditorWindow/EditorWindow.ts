@@ -7,7 +7,6 @@ import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
 
 import { html, PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { keyed } from "lit/directives/keyed.js";
 import { BaseElement } from "../BaseElement";
 
 import { styles } from "./EditorWindow.style";
@@ -17,11 +16,13 @@ import { Document } from "../../core/Document";
 import { Editor } from "../../core/Editor";
 import { DocumentProvider } from "../../core/DocumentProvider";
 
+import "../DocumentEditor";
+import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
+
 @customElement("ds-editor-window")
 export class EditorWindow extends BaseElement {
     static override styles = [styles];
 
-    @state() protected _editor = new Editor();
     @state() protected _document: Document | null = null;
     @state() protected _hasUndo = false;
     @state() protected _hasRedo = false;
@@ -32,7 +33,6 @@ export class EditorWindow extends BaseElement {
     constructor() {
         super();
         console.log("EditorWindow constructor");
-        this._editor.providers.forEach((provider) => console.log(provider.name));
     }
 
     override connectedCallback() {
@@ -59,7 +59,7 @@ export class EditorWindow extends BaseElement {
         const lastDocMimeType = window.localStorage.getItem("lastDocumentMimeType");
         const lastDocProvider = window.localStorage.getItem("lastDocumentProvider");
         if (lastDoc && lastDocName && lastDocMimeType && lastDocProvider) {
-            const provider = this._editor.providers.find((p) => p.id === lastDocProvider);
+            const provider = getGeoDocumentProviders().find((p) => p.id === lastDocProvider);
             if (provider) {
                 const blob = new Blob([lastDoc], { type: lastDocMimeType });
                 this._openFile(provider, blob, lastDocName);
@@ -74,7 +74,8 @@ export class EditorWindow extends BaseElement {
     }
 
     private async _openFile(provider: DocumentProvider, blob: Blob, name: string) {
-        this._document = this._editor.document = await provider.openDocument(blob, name);
+        this._document = await provider.openDocument(blob, name);
+        this._editor = new Editor(this._document);
         return this._document;
     }
 
@@ -126,7 +127,7 @@ export class EditorWindow extends BaseElement {
                     <sl-dropdown
                         ><sl-button slot="trigger" size="large" caret>Open</sl-button>
                         <sl-menu>
-                            ${this._editor.providers.map(
+                            ${getGeoDocumentProviders().map(
                                 (provider) =>
                                     html`<sl-menu-item
                                         value="open"
@@ -173,6 +174,9 @@ export class EditorWindow extends BaseElement {
                 <sl-icon-button library="app-icons" name="polygon"></sl-icon-button>
                 <sl-icon-button library="app-icons" name="rectangle"></sl-icon-button>
                 <sl-icon-button name="circle"></sl-icon-button>
+            </div>
+            <div class="left-panels">
+                <ds-document-editor .editorGuid=${this._editor?.guid}></ds-document-editor>
             </div>
             ${this._document
                 ? html` <div class="status-bar">

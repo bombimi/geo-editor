@@ -8,8 +8,8 @@ generateTemplateFiles([
             folderPath: "./templates/templates/lit-component/",
         },
         stringReplacers: [
-            { question: "Insert class name", slot: "__name__" },
             { question: "Insert directory name", slot: "__dirname__" },
+            { question: "Insert class name", slot: "__name__" },
         ],
 
         output: {
