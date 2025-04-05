@@ -3,12 +3,13 @@ import { GeoJson, GeoSourceType, GeoSourceTypes } from "./GeoJson";
 
 export class GeoDocument extends Document {
     private _geoJson: GeoJson | null = null;
+    private _type?: string;
 
     constructor() {
         super();
     }
 
-    public override async open(blob: Blob, type: string): Promise<void> {
+    public override async open(blob: Blob, type: string, name: string): Promise<void> {
         // Implement the logic to open a GeoDocument from a Blob
         if (!GeoSourceTypes.includes(type as GeoSourceType)) {
             throw new Error(`Unsupported GeoSourceType: ${type}`);
@@ -19,6 +20,8 @@ export class GeoDocument extends Document {
         if (!this._geoJson) {
             throw new Error(`Failed to create GeoJson from blob`);
         }
+        this._geoJson.name = name;
+        this._type = type;
         console.log("Opening GeoDocument", blob);
     }
 
@@ -27,10 +30,12 @@ export class GeoDocument extends Document {
         console.log("Saving GeoDocument");
         return new Blob(); // Placeholder for actual Blob
     }
+
     public override get name(): string {
-        return "GeoDocument"; // Placeholder for actual name logic
+        return this._geoJson?.name ?? "Untitled";
     }
+
     public override get type(): string {
-        return "application/vnd.geo+json"; // Placeholder for actual type logic
+        return this._type ?? "";
     }
 }

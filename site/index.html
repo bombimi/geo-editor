@@ -1,8 +1,21 @@
+<!DOCTYPE html>
 <html>
     <head>
-        <script type="module" src="/dist/index.js"></script>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>Geo editor</title>
+
+        <script>
+            function postLoad() {
+                console.log("Post load");
+
+            }
+        </script>
+        <script type="module" onload="postLoad()" src="/dist/index.js" async></script>
         <link rel="stylesheet" href="/assets/shoelace/light.css" />
-        
+        <link rel="stylesheet" href="/assets/shoelace/dark.css" />
+        <link href='https://api.mapbox.com/mapbox-gl-js/v3.10.0/mapbox-gl.css' rel='stylesheet' />
         <style>
             html, body {
                 height: 100%;
@@ -14,10 +27,11 @@
             ds-editor-window {
                 width: 100%;
                 height: 100%;
+                background-color: var(--sl-color-default-100);
             }
         </style>
     </head>
-    <body>
-        <ds-editor-window>  </ds-editor-window>
+    <body class="sl-theme-dark">
+        <ds-editor-window></ds-editor-window>
     </body>
 </html>

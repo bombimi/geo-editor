@@ -1,11 +1,24 @@
 {
-    "cSpell.words": ["cavedb", "codegen"],
+    "cSpell.words": [
+        "bbox",
+        "cavedb",
+        "codegen",
+        "datacatalog",
+        "hillshade",
+        "mapbox",
+        "mapboxgl",
+        "uuidv"
+    ],
     "restoreTerminals.terminals": [
         {
             "splitTerminals": [
                 {
                     "name": "Build",
-                    "commands": ["yarn run watch:lib"]
+                    "commands": ["yarn run watch:dev"]
+                },
+                {
+                    "name": "Serve",
+                    "commands": ["yarn run serve:dev"]
                 }
             ]
         }

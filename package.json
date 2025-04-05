@@ -31,9 +31,7 @@
         "test:prod:watch": "MODE=prod wtr --watch",
         "codegen": "node ./templates/generate.js "
     },
-    "dependencies": {
-        "@mapbox/togeojson": "^0.16.2"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@rollup/plugin-commonjs": "^25.0.7",
         "@rollup/plugin-json": "^6.1.0",
@@ -60,6 +58,8 @@
         "@web/dev-server": "^0.3.0",
         "@web/dev-server-rollup": "^0.5.2",
         "@webcomponents/webcomponentsjs": "^2.6.0",
+        "@mapbox/togeojson": "^0.16.2",
+        "mapbox-gl": "^3.11.0",
         "async-mutex": "^0.4.0",
         "deep-diff": "^1.0.2",
         "eslint": "^8.39.0",

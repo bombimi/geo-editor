@@ -8,6 +8,15 @@ export const styles = css`
     }
 
     .editor-window {
+        width: 100%;
+        height: 100%;
+        background-color: var(--sl-color-neutral-100);
+    }
+
+    ds-document-renderer {
+        width: 100%;
+        display: block;
+        height: 100%;
         background-color: var(--sl-color-neutral-100);
     }
 
@@ -66,6 +75,21 @@ export const styles = css`
         right: 1em;
         top: 50%;
         transform: translateY(-50%);
+    }
+
+    .status-bar {
+        position: absolute;
+        display: flex;
+        gap: 0.5em;
+        bottom: 0em;
+        width: 100%;
+        left: 0em;
+        padding: 1em;
+        background-color: var(--sl-color-neutral-200);
+    }
+
+    .status-bar-item span {
+        color: var(--sl-color-neutral-100);
     }
 
     sl-icon-button {

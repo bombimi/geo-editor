@@ -25,6 +25,8 @@ const SHOELACE_ICONS = [
     "circle",
     "arrow-counterclockwise",
     "arrow-clockwise",
+    "moon-fill",
+    "moon",
 ];
 
 function getShoelaceIconTargets(destDir) {
@@ -55,6 +57,10 @@ function makeCopyTargets(destDir) {
         },
         {
             src: "node_modules/leaflet/dist/leaflet.css",
+            dest: `${destDir}/assets/`,
+        },
+        {
+            src: "node_modules/mapbox-gl/dist/mapbox-gl.css",
             dest: `${destDir}/assets/`,
         },
     ];

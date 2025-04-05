@@ -7,9 +7,13 @@ generateTemplateFiles([
         entry: {
             folderPath: "./templates/templates/lit-component/",
         },
-        stringReplacers: [{ question: "Insert class name", slot: "__name__" }],
+        stringReplacers: [
+            { question: "Insert class name", slot: "__name__" },
+            { question: "Insert directory name", slot: "__dirname__" },
+        ],
+
         output: {
-            path: "./lib/ui/__name__(pascalCase)",
+            path: "./lib/__dirname__(lowerCase)/__name__(pascalCase)",
             pathAndFileNameDefaultCase: "(pascalCase)",
             overwrite: true,
         },

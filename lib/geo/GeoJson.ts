@@ -25,10 +25,20 @@ export function cleanGeoJson(geo: FeatureCollection) {
     geo.features = geo.features.filter((x) => !toRemove.has(x));
     return geo;
 }
+
+function makeLocation(lat: number, lon: number) {
+    return {
+        lat,
+        lon,
+    };
+}
+
 /**
  * GEOJson container of features
  */
 export class GeoJson {
+    public name = "";
+
     constructor(public readonly features: GeoJSON.FeatureCollection) {}
 
     //-----------------------------------------------------------------------------
