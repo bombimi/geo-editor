@@ -4,6 +4,7 @@
         "cavedb",
         "codegen",
         "datacatalog",
+        "guids",
         "hillshade",
         "mapbox",
         "mapboxgl",

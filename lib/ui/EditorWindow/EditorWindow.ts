@@ -7,7 +7,7 @@ import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
 
 import { html, PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
-import { BaseElement } from "../BaseElement";
+import { EditorElement } from "../EditorElement";
 
 import { styles } from "./EditorWindow.style";
 
@@ -20,7 +20,7 @@ import "../DocumentEditor";
 import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
 
 @customElement("ds-editor-window")
-export class EditorWindow extends BaseElement {
+export class EditorWindow extends EditorElement {
     static override styles = [styles];
 
     @state() protected _document: Document | null = null;
@@ -113,7 +113,9 @@ export class EditorWindow extends BaseElement {
     override render() {
         return html`<div class="editor-window">
             ${this._document
-                ? html`<ds-document-renderer></ds-document-renderer>`
+                ? html`<ds-document-renderer
+                      .editorGuid=${this._editor?.guid}
+                  ></ds-document-renderer>`
                 : html`<div class="no-document-container">
                       <div class="no-document-inner">
                           <span class="no-document-text">geoEditor</span>
@@ -178,11 +180,6 @@ export class EditorWindow extends BaseElement {
             <div class="left-panels">
                 <ds-document-editor .editorGuid=${this._editor?.guid}></ds-document-editor>
             </div>
-            ${this._document
-                ? html` <div class="status-bar">
-                      <span>${this._document.name}</span>
-                  </div>`
-                : html``}
         </div>`;
     }
 }

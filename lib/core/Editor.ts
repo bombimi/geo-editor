@@ -23,6 +23,10 @@ export class Editor {
         return this._document;
     }
 
+    get selectionSet() {
+        return this._selectionSet;
+    }
+
     dispose() {
         editorManager.remove(this);
     }

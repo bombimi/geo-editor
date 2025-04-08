@@ -23,6 +23,8 @@ export class DocumentObject {
     ) {
         this.updateProperty({ name: "name", type: "string", value: name });
         this.updateProperty({ name: "type", type: "string", value: type });
+        this.updateProperty({ name: "__guid", type: "string", value: this.guid });
+
         for (const prop of properties) {
             this.updateProperty(prop); // Update properties for the document object
         }

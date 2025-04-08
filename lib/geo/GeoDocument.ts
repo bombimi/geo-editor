@@ -10,6 +10,10 @@ export class GeoDocument extends Document {
         super();
     }
 
+    public get geoJson(): GeoJson | null {
+        return this._geoJson;
+    }
+
     public override async open(blob: Blob, type: string, name: string): Promise<void> {
         if (!GeoSourceTypes.includes(type as GeoSourceType)) {
             throw new Error(`Unsupported GeoSourceType: ${type}`);
@@ -24,28 +28,22 @@ export class GeoDocument extends Document {
         this._type = type;
 
         const root = new DocumentObject(this._geoJson.name);
-        for (const feature of this._geoJson.features.features) {
-            if (feature.geometry && feature.geometry.type === "Polygon") {
-                root.addChild(new DocumentObject(feature.properties!.name, "Polygon", root));
-                console.log("Processing Polygon feature", feature);
-            } else if (feature.geometry && feature.geometry.type === "Point") {
-                const properties: DocumentObjectProperty[] = [];
-                if (feature.properties) {
-                    for (const [key, value] of Object.entries(feature.properties)) {
-                        properties.push({
-                            name: key,
-                            value: value,
-                            type: "string",
-                        });
-                    }
-                }
-                root.addChild(
-                    new DocumentObject(feature.properties!.name, "Point", root, properties)
-                );
 
-                console.log("Processing Point feature", feature);
-            } else {
-                console.log("Processing other feature type", feature);
+        for (const feature of this._geoJson.features.features) {
+            const properties: DocumentObjectProperty[] = [];
+            if (feature.properties) {
+                for (const [key, value] of Object.entries(feature.properties)) {
+                    properties.push({
+                        name: key,
+                        value: value,
+                        type: "string",
+                    });
+                }
+            }
+            const name = feature.properties?.name ?? feature.properties?.id ?? "";
+            const type = feature.geometry.type;
+            if (type) {
+                new DocumentObject(name, type, root, properties);
             }
         }
         this.root = root;

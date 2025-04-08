@@ -1,6 +1,6 @@
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { BaseElement } from "../BaseElement";
+import { EditorElement } from "../EditorElement";
 
 import { styles } from "./DocumentEditor.style";
 
@@ -8,7 +8,7 @@ import "../DocumentObjectTree";
 import "../PropertyEditor";
 
 @customElement("ds-document-editor")
-export class DocumentEditor extends BaseElement {
+export class DocumentEditor extends EditorElement {
     static override styles = [styles];
 
     override render() {

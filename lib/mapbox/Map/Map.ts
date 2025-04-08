@@ -7,6 +7,7 @@ import { Map as MapboxMap } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import { merge } from "lodash-es";
 import { watch } from "../../ui-utils/watch";
+import { Location } from "../../geo/GeoJson";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
 
@@ -34,7 +35,7 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
             pitch: 0,
             bearing: 0,
         },
-        style: "mapbox://styles/mapbox/satellite-v9",
+        style: "mapbox://styles/mapbox/standard-satellite",
         projection: "globe",
         keys: apiKeys,
     };
@@ -49,6 +50,7 @@ export class Map extends LitElement {
     private _map?: MapboxMap;
     private _config = this.config;
     private _activeLayers: any[] = [];
+    private _geoJsonLayers: any[] = [];
     @state() protected _cssLoaded = false;
 
     @query("#map-container") protected _mapContainer?: HTMLElement;
@@ -77,7 +79,81 @@ export class Map extends LitElement {
         }
     }
 
-    private _initMap() {
+    public fitBounds(ne: Location, sw: Location) {
+        if (this._map) {
+            const bb = new mapboxgl.LngLatBounds(
+                new mapboxgl.LngLat(sw.lon, sw.lat),
+                new mapboxgl.LngLat(ne.lon, ne.lat)
+            );
+            this._map.fitBounds(bb, {
+                padding: 20,
+            });
+        }
+    }
+
+    public addGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
+        //this._geoJsonLayers.push(geo);
+        this._map?.addSource("geojson", {
+            type: "geojson",
+            data: geo,
+        });
+        this._map?.addLayer({
+            id: "geojson-layer",
+            source: "geojson",
+            type: "line",
+            paint: {
+                "line-color": "#000",
+                "line-width": 3,
+            },
+        });
+
+        this._map?.addLayer({
+            id: "points",
+            type: "symbol",
+            source: "geojson",
+            layout: {
+                "icon-image": "point",
+                "icon-size": 0.15,
+            },
+        });
+    }
+
+    private async _loadImage(name: string) {
+        const url = `/map-icons/${name}.png`;
+        return new Promise((resolve, reject) => {
+            this._map?.loadImage(url, (error, image) => {
+                if (error) {
+                    reject(error);
+                } else if (image) {
+                    this._map?.addImage(name, image);
+                    resolve(image);
+                }
+            });
+        });
+    }
+
+    private async _initMapbox(): Promise<void> {
+        return new Promise((resolve, _reject) => {
+            if (!this._mapContainer || !this._cssLoaded || !this._config) {
+                return;
+            }
+
+            this._map = new MapboxMap({
+                container: this._mapContainer,
+                style: this._config.style,
+                projection: this._config.projection,
+                center: [this._config?.map.center[0], this._config?.map.center[1]],
+                zoom: this._config.map.zoom,
+                pitch: this._config.map.pitch,
+            });
+            this._map.on("load", () => {
+                this._addCheckedLayers();
+                resolve();
+            });
+        });
+    }
+
+    private async _initMap() {
         if (!this._mapContainer || !this._cssLoaded || !this._config) {
             return;
         }
@@ -89,18 +165,15 @@ export class Map extends LitElement {
             this._map.remove();
             this._map = undefined;
         }
-        this._map = new MapboxMap({
-            container: this._mapContainer,
-            style: this._config.style,
-            projection: this._config.projection,
-            center: [this._config?.map.center[0], this._config?.map.center[1]],
-            zoom: this._config.map.zoom,
-            pitch: this._config.map.pitch,
-        });
-        this._map.on("load", () => {
-            this._addCheckedLayers();
-            //   this._disableRightMouseDragRotate();
-        });
+
+        await this._initMapbox();
+
+        const icons = ["point"];
+        await Promise.all(icons.map((icon) => this._loadImage(icon)));
+
+        this.dispatchEvent(new CustomEvent("map-loaded", { bubbles: true, composed: true }));
+
+        //   this._disableRightMouseDragRotate();
     }
 
     private async _addCheckedLayers() {

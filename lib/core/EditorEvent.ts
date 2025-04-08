@@ -1,4 +1,4 @@
-export class Event {
+export class EditorEvent {
     private _listeners: Array<(args: any) => void> = [];
 
     public add(listener: (args: any) => void): void {

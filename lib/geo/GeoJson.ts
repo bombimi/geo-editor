@@ -9,6 +9,11 @@ export type GeoSourceType = "kml" | "geojson" | "gpx";
 
 export const GeoSourceTypes: GeoSourceType[] = ["kml", "geojson", "gpx"];
 
+export type Location = {
+    lat: number;
+    lon: number;
+};
+
 export function cleanGeoJson(geo: FeatureCollection) {
     const toRemove = new Set<Feature>();
     for (const feature of geo.features) {
@@ -30,7 +35,7 @@ function makeLocation(lat: number, lon: number) {
     return {
         lat,
         lon,
-    };
+    } as Location;
 }
 
 /**
