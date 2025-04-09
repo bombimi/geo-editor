@@ -11,7 +11,7 @@ import { EditorElement } from "../EditorElement";
 
 import { styles } from "./EditorWindow.style";
 
-import { DocumentRenderer } from "../DocumentRenderer";
+import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
 import { Document } from "../../core/Document";
 import { Editor } from "../../core/Editor";
 import { DocumentProvider } from "../../core/DocumentProvider";
@@ -28,7 +28,7 @@ export class EditorWindow extends EditorElement {
     @state() protected _hasRedo = false;
     @state() protected _darkMode = true;
 
-    @query("ds-document-renderer") protected _documentRenderer?: DocumentRenderer;
+    @query("ds-document-renderer") protected _documentRenderer?: GeoDocumentRenderer;
 
     constructor() {
         super();
@@ -158,6 +158,11 @@ export class EditorWindow extends EditorElement {
                         name="dash-lg"
                         ?disabled=${this._document === null}
                         @click=${() => this._documentRenderer?.zoomOut()}
+                    ></sl-icon-button>
+                    <sl-icon-button
+                        name="app"
+                        ?disabled=${this._document === null}
+                        @click=${() => this._documentRenderer?.fitToBounds()}
                     ></sl-icon-button>
                     <sl-icon-button
                         name="arrow-counterclockwise"

@@ -3,7 +3,7 @@ import "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js";
 import "@shoelace-style/shoelace/dist/components/icon/icon.js";
 
 import { html, HTMLTemplateResult } from "lit";
-import { customElement, property, state } from "lit/decorators.js";
+import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./DocumentObjectTree.style";
@@ -11,6 +11,7 @@ import { Document } from "../../core/Document";
 import { watch } from "../../ui-utils/watch";
 import { DocumentObject } from "../../core/DocumentObject";
 import SlTreeItem from "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js";
+import { SelectionSet } from "../../core/SelectionSet";
 
 function typeToIcon(type: string) {
     switch (type) {
@@ -29,11 +30,26 @@ export class DocumentObjectTree extends EditorElement {
     @state() protected _document: Document | null = null;
     @state() protected _tree?: HTMLTemplateResult;
 
+    private _selectionSet = new SelectionSet();
+
     @watch("_document")
     _onDocumentChange() {
         this._tree = undefined;
         if (this._document) {
             this._makeTree();
+        }
+    }
+
+    protected override _selectionSetChanged() {
+        if (this._editor) {
+            if (!this._selectionSet.isEqual(this._editor.selectionSet)) {
+                this._clearSelectionClasses();
+                const firstItem = this._setSelectionClasses(this._editor.selectionSet.array);
+                if (firstItem) {
+                    firstItem.scrollIntoView({ block: "center", behavior: "smooth" });
+                }
+                this._selectionSet = this._editor.selectionSet.clone();
+            }
         }
     }
 
@@ -45,6 +61,34 @@ export class DocumentObjectTree extends EditorElement {
         else this._tree = html``;
     }
 
+    private _clearSelectionClasses() {
+        if (this._editor) {
+            const items = this.shadowRoot!.querySelectorAll("sl-tree-item");
+            items.forEach((i) => {
+                i.classList.remove("selected");
+            });
+        }
+    }
+
+    private _setSelectionClasses(selectionSet: string[]) {
+        let firstSelectedItem: SlTreeItem | undefined;
+
+        if (this._editor) {
+            const items = this.shadowRoot!.querySelectorAll("sl-tree-item");
+
+            items.forEach((item) => {
+                if (selectionSet.includes(item.dataset.guid as string)) {
+                    if (!firstSelectedItem) {
+                        firstSelectedItem = item as SlTreeItem;
+                    }
+                    item.classList.add("selected");
+                }
+            });
+        }
+
+        return firstSelectedItem;
+    }
+
     private _selectItem(e: any) {
         if (e.eventPhase !== Event.AT_TARGET) {
             return;
@@ -54,17 +98,15 @@ export class DocumentObjectTree extends EditorElement {
             const guid = item.dataset.guid as string;
             const control = e.ctrlKey || e.metaKey;
             if (!control) {
-                const tree = item.parentElement as SlTreeItem;
-                const items = tree.querySelectorAll("sl-tree-item");
-                items.forEach((i) => {
-                    if (i !== item) {
-                        i.classList.remove("selected");
-                    }
-                });
-                this._editor.selectionSet.clear();
+                this._clearSelectionClasses();
+                this._selectionSet.clear();
             }
-            this._editor.selectionSet.toggle(guid);
+            this._selectionSet.toggle(guid);
             item.classList.toggle("selected");
+
+            // do this as the last step as we decided whether to scroll the container
+            // when the selection changes based on whether we set it or not
+            this._editor.selectionSet.set(this._selectionSet.array);
         }
     }
 

@@ -17,7 +17,10 @@ registerIconLibrary("app-icons", {
 export * from "./core/Editor";
 
 export * from "./ui/EditorWindow";
-export * from "./ui/DocumentRenderer";
+export * from "./ui/GeoDocumentRenderer";
 
 export * from "./geo/GeoJson";
 export * from "./geo/GeoDocumentProviders";
+
+export * from "./mapbox/Map";
+export * from "./mapbox/MapMarker";

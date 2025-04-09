@@ -3,11 +3,13 @@ import { customElement, property, query, state } from "lit/decorators.js";
 
 import { styles } from "./Map.style";
 
-import { Map as MapboxMap } from "mapbox-gl";
+import { Map as MapboxMap, MarkerOptions } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import { merge } from "lodash-es";
 import { watch } from "../../ui-utils/watch";
 import { Location } from "../../geo/GeoJson";
+import { Feature, Geometry } from "geojson";
+import { ClickableMarker } from "./ClickableMarker";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
 
@@ -46,11 +48,15 @@ export class Map extends LitElement {
     static override styles = [styles];
 
     @property({ type: Object }) config: MapConfig = makeConfig();
+    @property({ type: Array }) selectionSet: string[] = [];
 
     private _map?: MapboxMap;
     private _config = this.config;
     private _activeLayers: any[] = [];
-    private _geoJsonLayers: any[] = [];
+    private _pointFeatures: Feature[] = [];
+    private _geoJsonLoaded = false;
+    private _markers: ClickableMarker[] = [];
+
     @state() protected _cssLoaded = false;
 
     @query("#map-container") protected _mapContainer?: HTMLElement;
@@ -65,6 +71,13 @@ export class Map extends LitElement {
     @watch("_cssLoaded")
     _onCssLoaded() {
         this._initMap();
+    }
+
+    @watch("selectionSet")
+    _onSelectionSetChange() {
+        for (const marker of this._markers) {
+            marker.setSelected(this.selectionSet.includes(marker.guid));
+        }
     }
 
     public zoomIn() {
@@ -91,30 +104,220 @@ export class Map extends LitElement {
         }
     }
 
-    public addGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
-        //this._geoJsonLayers.push(geo);
-        this._map?.addSource("geojson", {
+    public setGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
+        if (!this._map) {
+            return;
+        }
+        if (this._geoJsonLoaded) {
+            this._pointFeatures = [];
+            this._map.removeLayer("map-data-fill");
+            this._map.removeLayer("map-data-fill-outline");
+            this._map.removeLayer("map-data-line");
+            this._map.removeSource("map-data");
+            for (const marker of this._markers) {
+                marker.remove();
+            }
+            this._markers = [];
+            this._geoJsonLoaded = false;
+        }
+
+        const filteredFeatures = geo.features.filter((feature) => feature.geometry !== null);
+
+        this._map.addSource("map-data", {
             type: "geojson",
-            data: geo,
-        });
-        this._map?.addLayer({
-            id: "geojson-layer",
-            source: "geojson",
-            type: "line",
-            paint: {
-                "line-color": "#000",
-                "line-width": 3,
+            data: {
+                type: "FeatureCollection",
+                features: filteredFeatures,
             },
         });
 
-        this._map?.addLayer({
-            id: "points",
-            type: "symbol",
-            source: "geojson",
-            layout: {
-                "icon-image": "point",
-                "icon-size": 0.15,
+        const color = "#e8e8e8";
+        this._map.addLayer({
+            id: "map-data-fill",
+            type: "fill",
+            source: "map-data",
+            paint: {
+                "fill-color": ["coalesce", ["get", "fill"], color],
+                "fill-opacity": ["coalesce", ["get", "fill-opacity"], 0.3],
             },
+            filter: ["==", ["geometry-type"], "Polygon"],
+        });
+
+        this._map.addLayer({
+            id: "map-data-fill-outline",
+            type: "line",
+            source: "map-data",
+            paint: {
+                "line-color": ["coalesce", ["get", "stroke"], color],
+                "line-width": ["coalesce", ["get", "stroke-width"], 2],
+                "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
+            },
+            filter: ["==", ["geometry-type"], "Polygon"],
+        });
+
+        this._map.addLayer({
+            id: "map-data-line",
+            type: "line",
+            source: "map-data",
+            paint: {
+                "line-color": ["coalesce", ["get", "stroke"], color],
+                "line-width": ["coalesce", ["get", "stroke-width"], 2],
+                "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
+            },
+            filter: ["==", ["geometry-type"], "LineString"],
+        });
+
+        this._addMarkers(geo);
+        this._geoJsonLoaded = true;
+    }
+
+    private _handlePointGeometry(geometry: Geometry, properties: any, id: number) {
+        this._pointFeatures.push({
+            type: "Feature",
+            id,
+            geometry,
+            properties,
+        });
+    }
+
+    private _addMarkers(geojson: GeoJSON.FeatureCollection) {
+        if (!this._map) {
+            return;
+        }
+
+        const handleGeometry = (geometry: Geometry, properties: any, index: number) => {
+            if (geometry.type === "Point") {
+                this._handlePointGeometry(geometry, properties, index);
+            }
+
+            if (geometry.type === "MultiPoint") {
+                geometry.coordinates.forEach((coordinatePair) => {
+                    this._handlePointGeometry(
+                        {
+                            type: "Point",
+                            coordinates: coordinatePair,
+                        },
+                        properties || {},
+                        index
+                    );
+                });
+            }
+
+            if (geometry.type === "GeometryCollection") {
+                geometry.geometries.forEach((geometry) => {
+                    handleGeometry(geometry, properties, index);
+                });
+            }
+        };
+
+        geojson.features.forEach((feature, i) => {
+            const { geometry, properties } = feature;
+            handleGeometry(geometry, properties, i);
+        });
+
+        if (this._pointFeatures.length === 0) {
+            return;
+        }
+
+        const DEFAULT_DARK_FEATURE_COLOR = "#555";
+        const DEFAULT_LIGHT_FEATURE_COLOR = "#e8e8e8";
+        const DEFAULT_SATELLITE_FEATURE_COLOR = "#00f900";
+
+        this._pointFeatures.map((point) => {
+            let defaultColor = DEFAULT_DARK_FEATURE_COLOR; // Default feature color
+            let defaultSymbolColor = "#fff";
+
+            const activeStyle = "Satellite Streets"; //context.storage.get("style");
+
+            // Adjust the feature color for certain styles to help visibility
+            switch (activeStyle) {
+                case "Satellite Streets":
+                    defaultColor = DEFAULT_SATELLITE_FEATURE_COLOR;
+                    defaultSymbolColor = "#fff";
+                    break;
+                // case "Dark":
+                //     defaultColor = DEFAULT_LIGHT_FEATURE_COLOR;
+                //     defaultSymbolColor = DEFAULT_DARK_FEATURE_COLOR;
+                //     break;
+                default:
+                    defaultColor = DEFAULT_DARK_FEATURE_COLOR;
+                    defaultSymbolColor = "#fff";
+            }
+
+            // If the Feature Object contains styling then use that, otherwise use our default feature color.
+            const color = (point.properties && point.properties["marker-color"]) || defaultColor;
+            const symbolColor =
+                (point.properties && point.properties["symbol-color"]) || defaultSymbolColor;
+
+            const scale = 6;
+            // if (point.properties && point.properties["marker-size"]) {
+            //     if (point.properties["marker-size"] === "small") {
+            //         scale = 1.6;
+            //     }
+
+            //     if (point.properties["marker-size"] === "large") {
+            //         scale = 2.2;
+            //     }
+            // }
+
+            let symbol = "circle";
+            if (point.properties && point.properties["marker-symbol"] !== undefined) {
+                symbol = point.properties["marker-symbol"];
+            }
+
+            const marker = new ClickableMarker(
+                {
+                    color,
+                    scale,
+                    symbol,
+                    symbolColor,
+                } as MarkerOptions,
+                point.properties?.name || "",
+                point.properties?.__guid || ""
+            )
+                .setLngLat((point.geometry as any).coordinates)
+                .onClick(() => {
+                    const guid = point.properties?.__guid;
+                    if (guid) {
+                        this.dispatchEvent(
+                            new CustomEvent("marker-click", {
+                                bubbles: true,
+                                composed: true,
+                                detail: guid,
+                            })
+                        );
+                    }
+                    // bindPopup(
+                    //     {
+                    //         lngLat: point.geometry.coordinates,
+                    //         features: [point],
+                    //     },
+                    //     context,
+                    //     writable
+                    // );
+                })
+                .addTo(this._map!);
+
+            marker.getElement().addEventListener("mouseover", () => {
+                marker.getElement().style.setProperty("cursor", "pointer", "important");
+            });
+
+            marker.getElement().addEventListener("touchstart", () => {
+                // bindPopup(
+                //     {
+                //         lngLat: point.geometry.coordinates,
+                //         features: [point],
+                //     },
+                //     context,
+                //     writable
+                // );
+            });
+
+            // Update the dot in the Marker for Dark base map style
+            // if (activeStyle === "Dark")
+            //     d3.selectAll(".mapboxgl-marker svg circle").style("fill", "#555", "important");
+
+            this._markers.push(marker);
         });
     }
 

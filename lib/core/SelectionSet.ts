@@ -1,3 +1,4 @@
+import { isEqual } from "lodash-es";
 import { EditorEvent } from "./EditorEvent";
 
 export type SelectionSetChangedEvent = {
@@ -11,6 +12,16 @@ export class SelectionSet {
 
     public get length(): number {
         return this._selection.size;
+    }
+
+    public isEqual(other: SelectionSet): boolean {
+        return isEqual(this._selection, other.selectionSet);
+    }
+
+    public clone(): SelectionSet {
+        const clone = new SelectionSet();
+        clone.set(this.array);
+        return clone;
     }
 
     public set(guids: string[]): void {
@@ -36,7 +47,11 @@ export class SelectionSet {
         this._raiseOnChanged();
     }
 
-    public get(): string[] {
+    public get selectionSet(): Set<string> {
+        return this._selection;
+    }
+
+    public get array(): string[] {
         return Array.from(this._selection);
     }
 
@@ -55,7 +70,7 @@ export class SelectionSet {
     private _raiseOnChanged(): void {
         this.onChanged.raise({
             selectionSet: this,
-            selected: this.get(),
+            selected: this.array,
         } as SelectionSetChangedEvent);
         this._logSelection();
     }

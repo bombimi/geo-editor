@@ -6,6 +6,7 @@
         "datacatalog",
         "guids",
         "hillshade",
+        "lnglat",
         "mapbox",
         "mapboxgl",
         "uuidv"

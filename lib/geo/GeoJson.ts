@@ -14,6 +14,11 @@ export type Location = {
     lon: number;
 };
 
+export type Bounds = {
+    sw: Location;
+    ne: Location;
+};
+
 export function cleanGeoJson(geo: FeatureCollection) {
     const toRemove = new Set<Feature>();
     for (const feature of geo.features) {
@@ -114,7 +119,7 @@ export class GeoJson {
         return {
             sw: makeLocation(b[1], b[0]),
             ne: makeLocation(b[3], b[2]),
-        };
+        } as Bounds;
     }
 
     /**

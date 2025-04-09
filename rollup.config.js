@@ -23,10 +23,12 @@ const SHOELACE_ICONS = [
     "geo-alt",
     "bounding-box-circles",
     "circle",
+    "circle-fill",
     "arrow-counterclockwise",
     "arrow-clockwise",
     "moon-fill",
     "moon",
+    "app",
 ];
 
 function getShoelaceIconTargets(destDir) {

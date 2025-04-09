@@ -40,10 +40,15 @@ export class GeoDocument extends Document {
                     });
                 }
             }
+
             const name = feature.properties?.name ?? feature.properties?.id ?? "";
             const type = feature.geometry.type;
             if (type) {
-                new DocumentObject(name, type, root, properties);
+                const obj = new DocumentObject(name, type, root, properties);
+                if (!feature.properties) {
+                    feature.properties = {};
+                }
+                feature.properties.__guid = obj.guid;
             }
         }
         this.root = root;
