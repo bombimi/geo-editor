@@ -16,13 +16,11 @@ export const styles = css`
     ds-property-editor {
         min-height: 20rem;
         background-color: var(--sl-color-neutral-100);
-        margin: 1em;
         border-radius: 0.5em;
     }
 
     ds-document-object-tree {
         height: 100%;
-        margin: 1em;
         margin-bottom: 0;
         border-radius: 0.5em;
         overflow: auto;

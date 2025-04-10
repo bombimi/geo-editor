@@ -3,7 +3,7 @@ import { customElement, property, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./PropertyEditor.style";
-import { SelectionSetChangedEvent } from "../../core/SelectionSet";
+import { SelectionSetChangedEvent } from "../../editor/SelectionSet";
 
 @customElement("ds-property-editor")
 export class PropertyEditor extends EditorElement {

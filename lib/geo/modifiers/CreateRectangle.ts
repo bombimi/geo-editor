@@ -1,4 +1,4 @@
-import { Modifier } from "../../core/Modifier";
+import { Modifier } from "../../editor/Modifier";
 
 export class CreateRectangle extends Modifier {
     public override get name() {

@@ -1,6 +1,7 @@
-import { Document } from "../core/Document";
-import { DocumentObject, DocumentObjectProperty } from "../core/DocumentObject";
+import { Document } from "../editor/Document";
+import { DocumentObject } from "../editor/DocumentObject";
 import { GeoJson, GeoSourceType, GeoSourceTypes } from "./GeoJson";
+import { Factory } from "./objects/Factory";
 
 export class GeoDocument extends Document {
     private _geoJson: GeoJson | null = null;
@@ -30,21 +31,9 @@ export class GeoDocument extends Document {
         const root = new DocumentObject(this._geoJson.name);
 
         for (const feature of this._geoJson.features.features) {
-            const properties: DocumentObjectProperty[] = [];
-            if (feature.properties) {
-                for (const [key, value] of Object.entries(feature.properties)) {
-                    properties.push({
-                        name: key,
-                        value: value,
-                        type: "string",
-                    });
-                }
-            }
-
-            const name = feature.properties?.name ?? feature.properties?.id ?? "";
             const type = feature.geometry.type;
             if (type) {
-                const obj = new DocumentObject(name, type, root, properties);
+                const obj = Factory.createFeature(feature, root);
                 if (!feature.properties) {
                     feature.properties = {};
                 }

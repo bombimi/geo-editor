@@ -4,17 +4,20 @@ import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
 import "@shoelace-style/shoelace/dist/components/dropdown/dropdown.js";
 import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
+import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
+import "@shoelace-style/shoelace/dist/components/tab/tab.js";
+import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
 
 import { html, PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./EditorWindow.style";
 
 import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
-import { Document } from "../../core/Document";
-import { Editor } from "../../core/Editor";
-import { DocumentProvider } from "../../core/DocumentProvider";
+import { Document } from "../../editor/Document";
+import { Editor, UndoChangedArgs } from "../../editor/Editor";
+import { DocumentProvider } from "../../editor/DocumentProvider";
 
 import "../DocumentEditor";
 import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
@@ -76,6 +79,11 @@ export class EditorWindow extends EditorElement {
     private async _openFile(provider: DocumentProvider, blob: Blob, name: string) {
         this._document = await provider.openDocument(blob, name);
         this._editor = new Editor(this._document);
+        this._editor.onUndoChanged.add((args: UndoChangedArgs) => {
+            this._hasUndo = args.canUndo;
+            this._hasRedo = args.canRedo;
+        });
+
         return this._document;
     }
 
@@ -167,15 +175,20 @@ export class EditorWindow extends EditorElement {
                     <sl-icon-button
                         name="arrow-counterclockwise"
                         ?disabled=${!this._hasUndo}
+                        @click=${() => this._editor?.undo()}
                     ></sl-icon-button>
                     <sl-icon-button
                         name="arrow-clockwise"
                         ?disabled=${!this._hasRedo}
+                        @click=${() => this._editor?.redo()}
                     ></sl-icon-button>
                 </sl-button-group>
                 <sl-button size="large">Sign in</sl-button>
             </div>
             <div class="side-right-controls">
+                <sl-icon-button name="arrows-move"></sl-icon-button>
+                <sl-icon-button name="trash3"></sl-icon-button>
+                <span></span>
                 <sl-icon-button name="geo-alt"></sl-icon-button>
                 <sl-icon-button library="app-icons" name="line"></sl-icon-button>
                 <sl-icon-button library="app-icons" name="polygon"></sl-icon-button>
@@ -183,7 +196,19 @@ export class EditorWindow extends EditorElement {
                 <sl-icon-button name="circle"></sl-icon-button>
             </div>
             <div class="left-panels">
-                <ds-document-editor .editorGuid=${this._editor?.guid}></ds-document-editor>
+                <sl-tab-group>
+                    <sl-tab slot="nav" panel="objects">Objects</sl-tab>
+                    <sl-tab slot="nav" panel="history">History</sl-tab>
+
+                    <sl-tab-panel name="objects">
+                        <ds-document-editor .editorGuid=${this._editor?.guid}></ds-document-editor>
+                    </sl-tab-panel>
+                    <sl-tab-panel name="history">
+                        <ds-document-history
+                            .editorGuid=${this._editor?.guid}
+                        ></ds-document-history>
+                    </sl-tab-panel>
+                </sl-tab-group>
             </div>
         </div>`;
     }

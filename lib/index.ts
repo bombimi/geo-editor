@@ -14,7 +14,7 @@ registerIconLibrary("app-icons", {
     mutator: (svg) => svg.setAttribute("fill", "currentColor"),
 });
 
-export * from "./core/Editor";
+export * from "./editor/Editor";
 
 export * from "./ui/EditorWindow";
 export * from "./ui/GeoDocumentRenderer";

@@ -9,6 +9,7 @@ import { Map } from "../../mapbox/Map/Map";
 import { StarsStyle } from "./Stars.style";
 import { GeoDocument } from "../../geo/GeoDocument";
 import { Bounds } from "../../geo/GeoJson";
+import { MoveObjectCommand } from "../../geo/modifiers/MoveObject";
 @customElement("ds-document-renderer")
 export class GeoDocumentRenderer extends EditorElement {
     static override styles = [styles, StarsStyle];
@@ -79,7 +80,18 @@ export class GeoDocumentRenderer extends EditorElement {
                 id="map"
                 .selectionSet=${this._selectionSet}
                 @map-loaded=${() => this._editorInit()}
-                @marker-click=${(e: CustomEvent) => this._objectSelected(e.detail)}
+                @object-selected=${(e: CustomEvent) => this._objectSelected(e.detail)}
+                @object-moved=${(e: CustomEvent) => {
+                    if (this._editor) {
+                        this._editor.applyCommand(
+                            new MoveObjectCommand(
+                                this._editor.selectionSet.array,
+                                e.detail.deltaLon,
+                                e.detail.deltaLat
+                            )
+                        );
+                    }
+                }}
             >
             </ds-map>
         </div>`;

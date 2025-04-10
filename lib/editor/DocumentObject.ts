@@ -1,3 +1,6 @@
+import { EditorEvent } from "./EditorEvent";
+import { uuidv4 } from "./Utils";
+
 export type DocumentObjectPropertyType = "string" | "number" | "boolean" | "array" | "object"; // Types of properties for document objects
 
 export type DocumentObjectProperty = {
@@ -9,7 +12,17 @@ export type DocumentObjectProperty = {
 export type DocumentObjectType = "root" | string;
 
 export class DocumentObject {
-    public readonly guid: string = crypto.randomUUID(); // Unique identifier for the document object
+    public onChange = new EditorEvent(); // Event triggered when the document object changes
+    public onDelete = new EditorEvent(); // Event triggered when the document object is deleted
+
+    public onPropertyChange = new EditorEvent(); // Event triggered when a property changes
+    public onPropertyAdded = new EditorEvent(); // Event triggered when a property is added
+    public onPropertyRemoved = new EditorEvent(); // Event triggered when a property is removed
+
+    public onChildAdded = new EditorEvent(); // Event triggered when a child is added
+    public onChildRemoved = new EditorEvent(); // Event triggered when a child is removed
+
+    public readonly guid: string = uuidv4(); // Unique identifier for the document object
 
     private _children: DocumentObject[] = []; // Array of child document objects
     private _properties: DocumentObjectProperty[] = []; // Array of properties for the document object
@@ -43,11 +56,14 @@ export class DocumentObject {
     }
 
     public updateProperty(prop: DocumentObjectProperty): void {
-        const existingProp = this._findProperty(prop.name); // Find the existing property by name
+        const existingProp = this._findProperty(prop.name); //
         if (existingProp) {
-            existingProp.value = prop.value; // Update the value of the existing property
+            existingProp.value = prop.value;
+            this.onPropertyChange.raise(existingProp);
         } else {
-            this.addProperty(prop); // If not found, add the new property
+            // If not found, add the new property
+            this.addProperty(prop);
+            this.onPropertyAdded.raise(prop);
         }
     }
 
@@ -77,6 +93,10 @@ export class DocumentObject {
 
     public removeChild(child: DocumentObject): void {
         this._children = this._children.filter((c) => c !== child); // Remove a child document object from the array
+    }
+
+    public findChild(guid: string): DocumentObject | undefined {
+        return this._children.find((child) => child.guid === guid); // Find a child document object by its GUID
     }
 
     private _findProperty(name: string): DocumentObjectProperty | undefined {

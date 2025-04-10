@@ -24,6 +24,6 @@ export const styles = css`
         padding: 1rem;
         text-align: center;
         color: var(--sl-color-neutral-700);
-        background-color: var(--sl-color-neutral-200);
+        background-color: var(--sl-color-neutral-0);
     }
 `;

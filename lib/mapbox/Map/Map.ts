@@ -9,7 +9,12 @@ import { merge } from "lodash-es";
 import { watch } from "../../ui-utils/watch";
 import { Location } from "../../geo/GeoJson";
 import { Feature, Geometry } from "geojson";
-import { ClickableMarker } from "./ClickableMarker";
+import {
+    ClickableMarker,
+    ClickableMarkerDragEndEvent,
+    ClickableMarkerEvent,
+} from "./ClickableMarker";
+import { BaseElement } from "../../ui-lib/BaseElement";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
 
@@ -44,7 +49,7 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
 }
 
 @customElement("ds-map")
-export class Map extends LitElement {
+export class Map extends BaseElement {
     static override styles = [styles];
 
     @property({ type: Object }) config: MapConfig = makeConfig();
@@ -276,17 +281,8 @@ export class Map extends LitElement {
                 point.properties?.__guid || ""
             )
                 .setLngLat((point.geometry as any).coordinates)
-                .onClick(() => {
-                    const guid = point.properties?.__guid;
-                    if (guid) {
-                        this.dispatchEvent(
-                            new CustomEvent("marker-click", {
-                                bubbles: true,
-                                composed: true,
-                                detail: guid,
-                            })
-                        );
-                    }
+                .onClick((e: ClickableMarkerEvent) => {
+                    this._dispatchEvent("object-selected", e.marker.guid);
                     // bindPopup(
                     //     {
                     //         lngLat: point.geometry.coordinates,
@@ -295,6 +291,13 @@ export class Map extends LitElement {
                     //     context,
                     //     writable
                     // );
+                })
+                .onDragEnd((e: ClickableMarkerDragEndEvent) => {
+                    this._dispatchEvent("object-moved", {
+                        object: e.guid,
+                        lon: e.deltaLon,
+                        lat: e.deltaLat,
+                    });
                 })
                 .addTo(this._map!);
 

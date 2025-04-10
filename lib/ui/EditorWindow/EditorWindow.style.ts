@@ -110,4 +110,38 @@ export const styles = css`
         background-color: var(--sl-color-neutral-200);
         border-radius: 0.5em;
     }
+
+    ds-document-editor {
+        width: 100%;
+        height: 100%;
+        background-color: var(--sl-color-neutral-200);
+    }
+
+    sl-tab-group {
+        width: 100%;
+        height: 100%;
+        background-color: var(--sl-color-neutral-0);
+    }
+
+    sl-tab-group::part(base) {
+        height: 100%;
+    }
+
+    sl-tab-group::part(body) {
+        height: 100%;
+        width: 100%;
+        overflow-y: hidden;
+        overflow-x: hidden;
+    }
+
+    sl-tab-panel {
+        height: 100%;
+        width: 100%;
+    }
+
+    sl-tab-panel::part(base) {
+        height: 100%;
+        width: 100%;
+        --padding: 0em;
+    }
 `;

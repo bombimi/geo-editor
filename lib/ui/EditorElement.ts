@@ -1,10 +1,10 @@
-import { LitElement } from "lit";
 import { property, state } from "lit/decorators.js";
 import { watch } from "../ui-utils/watch";
-import { editorManager } from "../core/EditorManager";
-import { Editor } from "../core/Editor";
+import { editorManager } from "../editor/EditorManager";
+import { Editor } from "../editor/Editor";
+import { BaseElement } from "../ui-lib/BaseElement";
 
-export class EditorElement extends LitElement {
+export class EditorElement extends BaseElement {
     @property({ type: String }) editorGuid?: string;
 
     @state() protected _editor?: Editor;

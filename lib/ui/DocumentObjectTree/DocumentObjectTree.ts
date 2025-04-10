@@ -7,11 +7,11 @@ import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./DocumentObjectTree.style";
-import { Document } from "../../core/Document";
+import { Document } from "../../editor/Document";
 import { watch } from "../../ui-utils/watch";
-import { DocumentObject } from "../../core/DocumentObject";
+import { DocumentObject } from "../../editor/DocumentObject";
 import SlTreeItem from "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js";
-import { SelectionSet } from "../../core/SelectionSet";
+import { SelectionSet } from "../../editor/SelectionSet";
 
 function typeToIcon(type: string) {
     switch (type) {

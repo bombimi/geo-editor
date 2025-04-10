@@ -1,5 +1,5 @@
-import { Document } from "../core/Document";
-import { DocumentProvider } from "../core/DocumentProvider";
+import { Document } from "../editor/Document";
+import { DocumentProvider } from "../editor/DocumentProvider";
 import { GeoDocument } from "./GeoDocument";
 
 export class GeoDocumentProviderKml extends DocumentProvider {

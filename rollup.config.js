@@ -29,6 +29,8 @@ const SHOELACE_ICONS = [
     "moon-fill",
     "moon",
     "app",
+    "arrows-move",
+    "trash3",
 ];
 
 function getShoelaceIconTargets(destDir) {

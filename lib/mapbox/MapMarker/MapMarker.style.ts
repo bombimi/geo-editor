@@ -21,7 +21,7 @@ export const styles = css`
         color: var(--sl-color-neutral-900);
         background-color: var(--sl-color-neutral-100);
         padding: 0.3rem;
-        border-radius: 0em 1em 1em 0em;
+        border-radius: 0.4em 1em 1em 0.4em;
     }
 
     :host(.selected) sl-icon {
