@@ -11,7 +11,7 @@ export type UndoChangedArgs = {
     canRedo: boolean;
 };
 export class Editor {
-    public onUndoChanged = new EditorEvent();
+    public onUndoChanged = new EditorEvent<UndoChangedArgs>();
     public readonly guid: string = crypto.randomUUID();
 
     private _providers = getGeoDocumentProviders();

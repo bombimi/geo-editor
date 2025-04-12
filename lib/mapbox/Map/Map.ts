@@ -295,8 +295,8 @@ export class Map extends BaseElement {
                 .onDragEnd((e: ClickableMarkerDragEndEvent) => {
                     this._dispatchEvent("object-moved", {
                         object: e.guid,
-                        lon: e.deltaLon,
-                        lat: e.deltaLat,
+                        deltaLon: e.deltaLon,
+                        deltaLat: e.deltaLat,
                     });
                 })
                 .addTo(this._map!);

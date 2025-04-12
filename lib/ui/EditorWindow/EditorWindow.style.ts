@@ -107,7 +107,7 @@ export const styles = css`
         top: 5em;
         bottom: 6em;
         width: 20em;
-        background-color: var(--sl-color-neutral-200);
+        background-color: var(--sl-color-neutral-0);
         border-radius: 0.5em;
     }
 

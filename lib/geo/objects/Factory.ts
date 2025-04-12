@@ -3,22 +3,19 @@ import { PointObject } from "./PointObject";
 import { LineStringObject } from "./LineStringObject";
 
 export class Factory {
-    public static createPoint(feature: GeoJSON.Feature, parent?: DocumentObject): PointObject {
-        return new PointObject(feature, parent);
+    public static createPoint(feature: GeoJSON.Feature): PointObject {
+        return new PointObject(feature);
     }
-    public static createLineString(
-        feature: GeoJSON.Feature,
-        parent?: DocumentObject
-    ): LineStringObject {
-        return new LineStringObject(feature, parent);
+    public static createLineString(feature: GeoJSON.Feature): LineStringObject {
+        return new LineStringObject(feature);
     }
 
-    public static createFeature(feature: GeoJSON.Feature, parent: DocumentObject): DocumentObject {
+    public static createFeature(feature: GeoJSON.Feature): DocumentObject {
         switch (feature.geometry.type) {
             case "Point":
-                return this.createPoint(feature, parent);
+                return this.createPoint(feature);
             case "LineString":
-                return this.createLineString(feature, parent);
+                return this.createLineString(feature);
             default:
                 throw new Error(`Unsupported geometry type: ${feature.geometry.type}`);
         }

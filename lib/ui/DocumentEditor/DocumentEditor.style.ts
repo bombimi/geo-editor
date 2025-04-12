@@ -13,9 +13,13 @@ export const styles = css`
         border-radius: 0.5rem;
     }
 
+    sl-split-panel {
+        height: 100%;
+        --divider-width: 20px;
+    }
+
     ds-property-editor {
         min-height: 20rem;
-        background-color: var(--sl-color-neutral-100);
         border-radius: 0.5em;
     }
 

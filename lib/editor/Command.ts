@@ -1,5 +1,4 @@
 import { Document } from "./Document";
-import { SelectionSet } from "./SelectionSet";
 
 export abstract class Command {
     private readonly guid: string = crypto.randomUUID();
@@ -13,4 +12,3 @@ export abstract class Command {
     public abstract do(document: Document): void;
     public abstract undo(document: Document): void;
 }
-/*  */

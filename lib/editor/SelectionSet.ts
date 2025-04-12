@@ -72,10 +72,5 @@ export class SelectionSet {
             selectionSet: this,
             selected: this.array,
         } as SelectionSetChangedEvent);
-        this._logSelection();
-    }
-
-    private _logSelection(): void {
-        console.log("SelectionSet:", this._selection);
     }
 }

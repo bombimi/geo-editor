@@ -5,6 +5,8 @@ export const styles = css`
     ${Style}
     :host {
         display: block;
+        background-color: var(--sl-color-neutral-0);
+        color: var(--sl-color-neutral-900);
     }
 
     .container {
@@ -25,5 +27,24 @@ export const styles = css`
         text-align: center;
         color: var(--sl-color-neutral-700);
         background-color: var(--sl-color-neutral-0);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        border-spacing: 0;
+    }
+
+    td {
+        padding: 0.5rem;
+    }
+
+    table,
+    td {
+        border: 1px solid var(--ds-color);
+    }
+
+    .readonly {
+        font-style: italic;
     }
 `;

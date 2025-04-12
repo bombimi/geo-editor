@@ -1,69 +1,65 @@
+import { DocumentProperty } from "./DocumentProperty";
 import { EditorEvent } from "./EditorEvent";
 import { uuidv4 } from "./Utils";
 
-export type DocumentObjectPropertyType = "string" | "number" | "boolean" | "array" | "object"; // Types of properties for document objects
-
-export type DocumentObjectProperty = {
-    name: string; // Name of the property
-    type: string; // Type of the property (e.g., "string", "number", "boolean")
-    value: any;
-};
-
 export type DocumentObjectType = "root" | string;
 
+export type DocumentPropertyEvent = {
+    property: DocumentProperty; // Property that triggered the event
+    object: DocumentObject; // Document object associated with the event
+};
+
+export type DocumentObjectChildEvent = {
+    child: DocumentObject; // Child document object that triggered the event
+    object: DocumentObject; // Document object associated with the event
+};
+
 export class DocumentObject {
-    public onChange = new EditorEvent(); // Event triggered when the document object changes
-    public onDelete = new EditorEvent(); // Event triggered when the document object is deleted
+    public onChange = new EditorEvent<DocumentObject>(); // Event triggered when the document object changes
+    public onDelete = new EditorEvent<DocumentObject>(); // Event triggered when the document object is deleted
 
-    public onPropertyChange = new EditorEvent(); // Event triggered when a property changes
-    public onPropertyAdded = new EditorEvent(); // Event triggered when a property is added
-    public onPropertyRemoved = new EditorEvent(); // Event triggered when a property is removed
+    public onPropertyChange = new EditorEvent<DocumentPropertyEvent>(); // Event triggered when a property changes
+    public onPropertyAdded = new EditorEvent<DocumentPropertyEvent>(); // Event triggered when a property is added
+    public onPropertyRemoved = new EditorEvent<DocumentPropertyEvent>(); // Event triggered when a property is removed
 
-    public onChildAdded = new EditorEvent(); // Event triggered when a child is added
-    public onChildRemoved = new EditorEvent(); // Event triggered when a child is removed
+    public onChildAdded = new EditorEvent<DocumentObjectChildEvent>(); // Event triggered when a child is added
+    public onChildRemoved = new EditorEvent<DocumentObjectChildEvent>(); // Event triggered when a child is removed
 
     public readonly guid: string = uuidv4(); // Unique identifier for the document object
 
     private _children: DocumentObject[] = []; // Array of child document objects
-    private _properties: DocumentObjectProperty[] = []; // Array of properties for the document object
+    private _properties: DocumentProperty[] = []; // Array of properties for the document object
     private _selected = false;
 
-    constructor(
-        name: string,
-        type: DocumentObjectType = "root",
-        parent: DocumentObject | null = null,
-        properties: DocumentObjectProperty[] = []
-    ) {
-        this.updateProperty({ name: "name", type: "string", value: name });
-        this.updateProperty({ name: "type", type: "string", value: type });
-        this.updateProperty({ name: "__guid", type: "string", value: this.guid });
+    constructor(name: string, type: DocumentObjectType, properties: DocumentProperty[] = []) {
+        this.updateProperty(new DocumentProperty("name", "string", name));
+        this.updateProperty(new DocumentProperty("type", "string", type, { readonly: true }));
+        this.updateProperty(
+            new DocumentProperty("__guid", "string", this.guid, { readonly: true })
+        );
 
         for (const prop of properties) {
             this.updateProperty(prop); // Update properties for the document object
         }
-
-        if (parent) {
-            parent.addChild(this); // If a parent is provided, add this object as a child to the parent
-        }
     }
 
-    public addProperty(prop: DocumentObjectProperty): void {
+    public addProperty(prop: DocumentProperty): void {
         this._properties.push(prop); // Add a property to the document object
+        this.onPropertyAdded.raise({ property: prop, object: this });
     }
 
-    public getProperty(name: string): DocumentObjectProperty | undefined {
+    public getProperty(name: string): DocumentProperty | undefined {
         return this._findProperty(name); // Get a property by its name
     }
 
-    public updateProperty(prop: DocumentObjectProperty): void {
+    public updateProperty(prop: DocumentProperty): void {
         const existingProp = this._findProperty(prop.name); //
         if (existingProp) {
             existingProp.value = prop.value;
-            this.onPropertyChange.raise(existingProp);
+            this.onPropertyChange.raise({ property: existingProp, object: this });
         } else {
             // If not found, add the new property
             this.addProperty(prop);
-            this.onPropertyAdded.raise(prop);
         }
     }
 
@@ -83,23 +79,40 @@ export class DocumentObject {
         return this._children; // Get the array of child document objects
     }
 
-    public get properties(): DocumentObjectProperty[] {
+    public get properties(): DocumentProperty[] {
         return this._properties; // Get the array of properties for the document object
     }
 
-    public addChild(child: DocumentObject): void {
+    public getObjectsFromGuids(guids: string[]): DocumentObject[] {
+        const objects: DocumentObject[] = [];
+        if (this._children) {
+            for (const guid of guids) {
+                const obj = this.getChild(guid);
+                if (obj) {
+                    objects.push(obj);
+                }
+            }
+        }
+        return objects;
+    }
+
+    public addChild(child: DocumentObject): DocumentObject {
         this._children.push(child); // Add a child document object to the array
+        this.onChildAdded.raise({ child, object: this });
+        return child;
     }
 
     public removeChild(child: DocumentObject): void {
-        this._children = this._children.filter((c) => c !== child); // Remove a child document object from the array
+        this._children = this._children.filter((c) => c !== child);
+        this.onChildRemoved.raise({ child, object: this });
     }
 
-    public findChild(guid: string): DocumentObject | undefined {
-        return this._children.find((child) => child.guid === guid); // Find a child document object by its GUID
+    // Find a child document object by its GUID
+    public getChild(guid: string): DocumentObject | undefined {
+        return this._children.find((child) => child.guid === guid);
     }
 
-    private _findProperty(name: string): DocumentObjectProperty | undefined {
+    private _findProperty(name: string): DocumentProperty | undefined {
         return this._properties.find((property) => property.name === name); // Find a property by its name
     }
 }

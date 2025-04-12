@@ -1,12 +1,11 @@
-import { DocumentObject } from "../../editor/DocumentObject";
 import { GeoObject } from "../GeoObject";
 
 export class LineStringObject extends GeoObject {
-    public constructor(feature: GeoJSON.Feature, parent?: DocumentObject) {
+    public constructor(feature: GeoJSON.Feature) {
         if (feature.geometry.type !== "LineString") {
             throw new Error("Feature geometry must be of type LineString.");
         }
-        super(feature, parent);
+        super(feature);
     }
 
     public override move(deltaLat: number, deltaLon: number): void {

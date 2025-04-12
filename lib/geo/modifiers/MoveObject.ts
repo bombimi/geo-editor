@@ -22,7 +22,7 @@ export class MoveObjectCommand extends Command {
 
     private _move(geoDoc: GeoDocument, guids: string[], dx: number, dy: number) {
         for (const guid of guids) {
-            const feature = geoDoc.root?.findChild(guid) as GeoObject;
+            const feature = geoDoc?.getChild(guid) as GeoObject;
             if (feature) {
                 feature.move(dx, dy);
             }

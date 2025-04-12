@@ -1,3 +1,5 @@
+import "@shoelace-style/shoelace/dist/components/split-panel/split-panel.js";
+
 import { html } from "lit";
 import { customElement } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
@@ -13,8 +15,14 @@ export class DocumentEditor extends EditorElement {
 
     override render() {
         return html`
-            <ds-document-object-tree .editorGuid=${this.editorGuid}></ds-document-object-tree>
-            <ds-property-editor .editorGuid=${this.editorGuid}></ds-property-editor>
+            <sl-split-panel id="splitter" vertical>
+                <sl-icon slot="divider" name="grip-horizontal"></sl-icon>
+                <ds-document-object-tree
+                    slot="start"
+                    .editorGuid=${this.editorGuid}
+                ></ds-document-object-tree>
+                <ds-property-editor slot="end" .editorGuid=${this.editorGuid}></ds-property-editor>
+            </sl-split-panel>
         `;
     }
 }

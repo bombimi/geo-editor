@@ -54,9 +54,9 @@ export class DocumentObjectTree extends EditorElement {
     }
 
     private _makeTree() {
-        if (this._document && this._document.root)
+        if (this._document)
             this._tree = html`<sl-tree selection="single">
-                >${this._makeTreeAux(this._document.root)}</sl-tree
+                >${this._makeTreeAux(this._document)}</sl-tree
             >`;
         else this._tree = html``;
     }
@@ -112,7 +112,7 @@ export class DocumentObjectTree extends EditorElement {
 
     private _makeTreeAux(object: DocumentObject): HTMLTemplateResult {
         return html`<sl-tree-item
-            ?expanded=${this._document!.root === object}
+            ?expanded=${this._document === object}
             @click=${(e: Event) => this._selectItem(e)}
             data-guid=${object.guid}
         >

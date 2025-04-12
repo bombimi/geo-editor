@@ -4,6 +4,7 @@
         "cavedb",
         "codegen",
         "datacatalog",
+        "geodoc",
         "guids",
         "hillshade",
         "lnglat",
@@ -21,6 +22,10 @@
                 {
                     "name": "Serve",
                     "commands": ["yarn run serve:dev"]
+                },
+                {
+                    "name": "Typescript",
+                    "commands": ["yarn run tsbuild:watch"]
                 }
             ]
         }

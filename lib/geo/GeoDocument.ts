@@ -1,5 +1,4 @@
 import { Document } from "../editor/Document";
-import { DocumentObject } from "../editor/DocumentObject";
 import { GeoJson, GeoSourceType, GeoSourceTypes } from "./GeoJson";
 import { Factory } from "./objects/Factory";
 
@@ -8,7 +7,7 @@ export class GeoDocument extends Document {
     private _type?: string;
 
     constructor() {
-        super();
+        super("geodoc", "root");
     }
 
     public get geoJson(): GeoJson | null {
@@ -28,19 +27,16 @@ export class GeoDocument extends Document {
         this._geoJson.name = name;
         this._type = type;
 
-        const root = new DocumentObject(this._geoJson.name);
-
         for (const feature of this._geoJson.features.features) {
             const type = feature.geometry.type;
             if (type) {
-                const obj = Factory.createFeature(feature, root);
+                const obj = this.addChild(Factory.createFeature(feature));
                 if (!feature.properties) {
                     feature.properties = {};
                 }
                 feature.properties.__guid = obj.guid;
             }
         }
-        this.root = root;
 
         console.log("Opening GeoDocument", blob);
     }

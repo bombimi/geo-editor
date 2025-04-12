@@ -1,15 +1,15 @@
-export class EditorEvent {
-    private _listeners: Array<(args: any) => void> = [];
+export class EditorEvent<T> {
+    private _listeners: Array<(args: T) => void> = [];
 
-    public add(listener: (args: any) => void): void {
+    public add(listener: (args: T) => void): void {
         this._listeners.push(listener);
     }
 
-    public remove(listener: (args: any) => void): void {
+    public remove(listener: (args: T) => void): void {
         this._listeners = this._listeners.filter((l) => l !== listener);
     }
 
-    public raise(args: any): void {
+    public raise(args: T): void {
         this._listeners.forEach((listener) => listener(args));
     }
 }
