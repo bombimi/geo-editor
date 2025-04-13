@@ -20,7 +20,7 @@ export class SelectionSet {
 
     public clone(): SelectionSet {
         const clone = new SelectionSet();
-        clone.set(this.array);
+        clone.set(this.toArray());
         return clone;
     }
 
@@ -51,7 +51,7 @@ export class SelectionSet {
         return this._selection;
     }
 
-    public get array(): string[] {
+    public toArray(): string[] {
         return Array.from(this._selection);
     }
 
@@ -70,7 +70,7 @@ export class SelectionSet {
     private _raiseOnChanged(): void {
         this.onChanged.raise({
             selectionSet: this,
-            selected: this.array,
+            selected: this.toArray(),
         } as SelectionSetChangedEvent);
     }
 }

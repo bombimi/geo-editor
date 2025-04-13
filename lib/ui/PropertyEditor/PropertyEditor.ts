@@ -23,7 +23,7 @@ export class PropertyEditor extends EditorElement {
             this._removeEvents();
 
             this._currentObjects = this._editor.document.getObjectsFromGuids(
-                event.selectionSet.array
+                event.selectionSet.toArray()
             );
             this._addEvents();
             this._resetProperties();
@@ -102,7 +102,7 @@ export class PropertyEditor extends EditorElement {
                                                 newProp.value = e.target.value;
                                                 this._editor?.applyCommand(
                                                     new SetPropertyCommand(
-                                                        this._editor.selectionSet.array,
+                                                        this._editor.selectionSet.toArray(),
                                                         newProp
                                                     )
                                                 );

@@ -57,7 +57,7 @@ export class GeoDocumentRenderer extends EditorElement {
     protected override _selectionSetChanged(_args: any): void {
         super._selectionSetChanged(_args);
         if (this._editor && this._map) {
-            this._selectionSet = this._editor.selectionSet.array;
+            this._selectionSet = this._editor.selectionSet.toArray();
         }
     }
     // protected override firstUpdated(changedProperties: PropertyValues): void {
@@ -85,7 +85,7 @@ export class GeoDocumentRenderer extends EditorElement {
                     if (this._editor) {
                         this._editor.applyCommand(
                             new MoveObjectCommand(
-                                this._editor.selectionSet.array,
+                                this._editor.selectionSet.toArray(),
                                 e.detail.deltaLon,
                                 e.detail.deltaLat
                             )

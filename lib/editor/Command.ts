@@ -4,7 +4,10 @@ import { Document } from "./Document";
 export abstract class Command {
     private readonly guid: string = crypto.randomUUID();
 
-    constructor(public readonly name: string) {}
+    constructor(
+        public readonly name: string,
+        protected readonly _selectionSet: string[]
+    ) {}
 
     public get displayName(): string {
         return camelCaseToReadable(this.name);

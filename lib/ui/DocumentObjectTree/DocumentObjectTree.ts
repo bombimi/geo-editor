@@ -44,7 +44,7 @@ export class DocumentObjectTree extends EditorElement {
         if (this._editor) {
             if (!this._selectionSet.isEqual(this._editor.selectionSet)) {
                 this._clearSelectionClasses();
-                const firstItem = this._setSelectionClasses(this._editor.selectionSet.array);
+                const firstItem = this._setSelectionClasses(this._editor.selectionSet.toArray());
                 if (firstItem) {
                     firstItem.scrollIntoView({ block: "center", behavior: "smooth" });
                 }
@@ -106,7 +106,7 @@ export class DocumentObjectTree extends EditorElement {
 
             // do this as the last step as we decided whether to scroll the container
             // when the selection changes based on whether we set it or not
-            this._editor.selectionSet.set(this._selectionSet.array);
+            this._editor.selectionSet.set(this._selectionSet.toArray());
         }
     }
 

@@ -6,10 +6,10 @@ export class SetPropertyCommand extends Command {
     private _oldProps = new Map<string, DocumentProperty | undefined>(); // Store the old property value for undo
 
     constructor(
-        private _selectionSet: string[],
+        selectionSet: string[],
         private _prop: DocumentProperty
     ) {
-        super("SetProperty");
+        super("SetProperty", selectionSet);
     }
 
     public override do(document: Document): void {

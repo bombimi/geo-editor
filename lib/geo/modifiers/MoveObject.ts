@@ -5,11 +5,11 @@ import { GeoObject } from "../GeoObject";
 
 export class MoveObjectCommand extends Command {
     constructor(
-        private _selectionSet: string[],
+        selectionSet: string[],
         private _dx: number,
         private _dy: number
     ) {
-        super("MoveObject");
+        super("MoveObject", selectionSet);
     }
 
     public do(document: Document) {
