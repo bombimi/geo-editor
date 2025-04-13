@@ -4,14 +4,8 @@ import { SelectionSet } from "./SelectionSet";
 import { getGeoDocumentProviders } from "../geo/GeoDocumentProviders";
 import { Document } from "./Document";
 import { editorManager } from "./EditorManager";
-import { EditorEvent } from "./EditorEvent";
 
-export type UndoChangedArgs = {
-    canUndo: boolean;
-    canRedo: boolean;
-};
 export class Editor {
-    public onUndoChanged = new EditorEvent<UndoChangedArgs>();
     public readonly guid: string = crypto.randomUUID();
 
     private _providers = getGeoDocumentProviders();
@@ -24,6 +18,10 @@ export class Editor {
         editorManager.add(this);
     }
 
+    dispose() {
+        editorManager.remove(this);
+    }
+
     get document() {
         return this._document;
     }
@@ -32,8 +30,8 @@ export class Editor {
         return this._selectionSet;
     }
 
-    dispose() {
-        editorManager.remove(this);
+    get undoBuffer() {
+        return this._undoBuffer;
     }
 
     get providers() {
@@ -44,12 +42,12 @@ export class Editor {
         if (this._document === null) {
             throw new Error("No document loaded.");
         }
-        console.log("Undoing command", this._document.name);
         const command = this._undoBuffer.back();
+        console.log("Undoing command", command.name, this._document.name);
+
         if (command) {
             command.undo(this._document);
         }
-        this._raiseUndoChanged();
     }
 
     public redo() {
@@ -61,7 +59,6 @@ export class Editor {
         if (command) {
             command.do(this._document);
         }
-        this._raiseUndoChanged();
     }
 
     public applyCommand(command: Command) {
@@ -71,13 +68,5 @@ export class Editor {
         console.log("Applying command", command.name, this._document.name);
         command.do(this._document);
         this._undoBuffer.push(command);
-        this._raiseUndoChanged();
-    }
-
-    private _raiseUndoChanged() {
-        this.onUndoChanged.raise({
-            canUndo: this._undoBuffer.canGoBack(),
-            canRedo: this._undoBuffer.canGoForward(),
-        } as UndoChangedArgs);
     }
 }

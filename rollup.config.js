@@ -32,6 +32,7 @@ const SHOELACE_ICONS = [
     "arrows-move",
     "trash3",
     "grip-horizontal",
+    "caret-right-fill",
 ];
 
 function getShoelaceIconTargets(destDir) {

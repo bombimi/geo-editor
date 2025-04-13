@@ -1,6 +1,6 @@
 import { html } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
-import { BaseElement } from "../BaseElement";
+import { BaseElement } from "ui-lib/BaseElement";
 
 import { styles } from "./__name__(pascalCase).style";
 

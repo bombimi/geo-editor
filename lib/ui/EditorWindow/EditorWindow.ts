@@ -16,11 +16,13 @@ import { styles } from "./EditorWindow.style";
 
 import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
 import { Document } from "../../editor/Document";
-import { Editor, UndoChangedArgs } from "../../editor/Editor";
+import { Editor } from "../../editor/Editor";
 import { DocumentProvider } from "../../editor/DocumentProvider";
+import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
 
 import "../DocumentEditor";
-import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
+import "../DocumentHistory";
+import { UndoBufferEventArgs } from "editor/UndoBuffer";
 
 @customElement("ds-editor-window")
 export class EditorWindow extends EditorElement {
@@ -33,24 +35,37 @@ export class EditorWindow extends EditorElement {
 
     @query("ds-document-renderer") protected _documentRenderer?: GeoDocumentRenderer;
 
+    private _boundHandleKeyDown = this._handleKeyDown.bind(this);
+
     constructor() {
         super();
         console.log("EditorWindow constructor");
+    }
+    private _handleKeyDown(event: KeyboardEvent) {
+        if (event.ctrlKey || event.metaKey) {
+            if (event.key === "z") {
+                event.preventDefault();
+                if (this._hasUndo) {
+                    this._editor?.undo();
+                }
+            } else if (event.key === "y") {
+                event.preventDefault();
+                if (this._hasRedo) {
+                    this._editor?.redo();
+                }
+            }
+        }
     }
 
     override connectedCallback() {
         super.connectedCallback();
         this._darkMode = document.body.classList.contains("sl-theme-dark");
+        window.addEventListener("keydown", this._boundHandleKeyDown);
+    }
 
-        // this._editor.addEventListener("documentChanged", (e) => {
-        //     this._hasUndo = this._editor.canUndo;
-        //     this._hasRedo = this._editor.canRedo;
-        //     this.requestUpdate();
-        // });
-        // this._editor.addEventListener("documentOpened", (e) => {
-        //     this._document = e.detail.document;
-        //     this.requestUpdate();
-        // });
+    override disconnectedCallback() {
+        super.disconnectedCallback();
+        window.removeEventListener("keydown", this._boundHandleKeyDown);
     }
 
     protected override firstUpdated(_changedProperties: PropertyValues): void {
@@ -76,13 +91,16 @@ export class EditorWindow extends EditorElement {
         this.requestUpdate();
     }
 
+    private _updateUndoRedo(args: UndoBufferEventArgs) {
+        this._hasUndo = args.canUndo;
+        this._hasRedo = args.canRedo;
+    }
+
     private async _openFile(provider: DocumentProvider, blob: Blob, name: string) {
         this._document = await provider.openDocument(blob, name);
         this._editor = new Editor(this._document);
-        this._editor.onUndoChanged.add((args: UndoChangedArgs) => {
-            this._hasUndo = args.canUndo;
-            this._hasRedo = args.canRedo;
-        });
+        this._editor.undoBuffer.onChanged.add(this._updateUndoRedo.bind(this));
+        this._editor.undoBuffer.onCaretChanged.add(this._updateUndoRedo.bind(this));
 
         return this._document;
     }

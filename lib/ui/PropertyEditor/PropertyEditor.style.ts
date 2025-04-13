@@ -18,6 +18,7 @@ export const styles = css`
     .main {
         flex: 1;
         overflow: auto;
+        padding: var(--ds-padding);
     }
 
     .footer {
@@ -37,11 +38,6 @@ export const styles = css`
 
     td {
         padding: 0.5rem;
-    }
-
-    table,
-    td {
-        /* border: 1px solid var(--ds-color); */
     }
 
     .readonly {

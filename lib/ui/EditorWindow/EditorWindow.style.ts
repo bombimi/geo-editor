@@ -5,6 +5,7 @@ export const styles = css`
     ${Style}
     :host {
         display: block;
+        color: var(--sl-color-neutral-900);
     }
 
     .editor-window {

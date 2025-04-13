@@ -9,6 +9,7 @@
         "inlineSources": true,
         "outDir": "./site/dest/.tsbuild",
         "rootDir": "./lib",
+        "baseUrl": "./lib",
         "strict": true,
         "noUnusedLocals": false,
         "noUnusedParameters": true,

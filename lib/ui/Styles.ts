@@ -6,6 +6,7 @@ export const Style = css`
 
         --ds-background-color: var(--sl-color-neutral-0);
         --ds-color: var(--sl-color-neutral-900);
+        --ds-padding: 0.5rem;
     }
 
     html {
