@@ -2,18 +2,19 @@ import { html } from "lit";
 import { classMap } from "lit/directives/class-map.js";
 import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
+import "@shoelace-style/shoelace/dist/components/input/input.js";
 
 import { styles } from "./PropertyEditor.style";
 import { SelectionSetChangedEvent } from "../../editor/SelectionSet";
 import { DocumentProperty } from "../../editor/DocumentProperty";
 import { DocumentObject } from "../../editor/DocumentObject";
-
+import { SetPropertyCommand } from "../../editor/commands/SetPropertyCommand";
 @customElement("ds-property-editor")
 export class PropertyEditor extends EditorElement {
     static override styles = [styles];
 
     @state() protected _numSelectedItems = 0;
-    @state() protected _properties: DocumentProperty[] = [];
+    @state() protected _mergedProperties: DocumentProperty[] = [];
     @state() protected _currentObjects: DocumentObject[] = [];
 
     protected override _selectionSetChanged(event: SelectionSetChangedEvent): void {
@@ -30,7 +31,7 @@ export class PropertyEditor extends EditorElement {
     }
 
     private _resetProperties() {
-        this._properties = this._mergeCommonProperties();
+        this._mergedProperties = this._mergeCommonProperties();
     }
 
     private _removeEvents() {
@@ -82,13 +83,32 @@ export class PropertyEditor extends EditorElement {
                 <div class="main">
                     <!-- Main content goes here -->
                     <table>
-                        ${this._properties.map(
+                        ${this._mergedProperties.map(
                             (property) => html`
                                 <tr>
                                     <td class=${classMap({ readonly: property.readonly })}>
                                         ${property.name}
                                     </td>
-                                    <td>${property.value !== null ? property.value : "—"}</td>
+                                    <td>
+                                        <sl-input
+                                            ?disabled=${property.readonly}
+                                            pill
+                                            filled
+                                            size="small"
+                                            clearable
+                                            value=${property.value !== null ? property.value : "—"}
+                                            @sl-input=${(e: any) => {
+                                                const newProp = property.clone();
+                                                newProp.value = e.target.value;
+                                                this._editor?.applyCommand(
+                                                    new SetPropertyCommand(
+                                                        this._editor.selectionSet.array,
+                                                        newProp
+                                                    )
+                                                );
+                                            }}
+                                        ></sl-input>
+                                    </td>
                                 </tr>
                             `
                         )}

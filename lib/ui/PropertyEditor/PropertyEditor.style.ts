@@ -41,7 +41,7 @@ export const styles = css`
 
     table,
     td {
-        border: 1px solid var(--ds-color);
+        /* border: 1px solid var(--ds-color); */
     }
 
     .readonly {
