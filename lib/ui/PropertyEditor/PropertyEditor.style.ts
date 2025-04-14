@@ -30,17 +30,29 @@ export const styles = css`
         background-color: var(--sl-color-neutral-0);
     }
 
-    table {
+    .two-column-grid {
         width: 100%;
-        border-collapse: collapse;
-        border-spacing: 0;
+        display: grid;
+        grid-template-columns: 30% auto;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
     }
 
-    td {
-        padding: 0.5rem;
+    sl-input {
+        min-width: 0;
     }
 
     .readonly {
         font-style: italic;
+    }
+
+    .color-property {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: center;
+        overflow-x: hidden;
+        width: 100%;
     }
 `;

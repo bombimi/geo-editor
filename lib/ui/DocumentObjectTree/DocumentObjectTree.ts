@@ -121,7 +121,7 @@ export class DocumentObjectTree extends EditorElement {
                 .name=${typeToIcon(object.type).name}
             >
             </sl-icon>
-            ${object.type === "root" ? object.name : `${object.type}`}
+            ${object.type === "root" ? object.displayName : `${object.displayType}`}
             ${object.properties
                 .filter((p) => !["type"].includes(p.name))
                 .map(

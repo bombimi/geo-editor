@@ -20,6 +20,7 @@ export class MoveObjectCommand extends Command {
         this._move(document as GeoDocument, this._selectionSet, -this._dx, -this._dy);
     }
 
+    //TODO: handle MultiPoint, need to take an index to move
     private _move(geoDoc: GeoDocument, guids: string[], dx: number, dy: number) {
         for (const guid of guids) {
             const feature = geoDoc?.getChild(guid) as GeoObject;

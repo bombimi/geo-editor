@@ -1,14 +1,19 @@
+import "@shoelace-style/shoelace/dist/components/input/input.js";
+import "@shoelace-style/shoelace/dist/components/color-picker/color-picker.js";
+
 import { html } from "lit";
 import { classMap } from "lit/directives/class-map.js";
+import { choose } from "lit/directives/choose.js";
+
 import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
-import "@shoelace-style/shoelace/dist/components/input/input.js";
 
 import { styles } from "./PropertyEditor.style";
 import { SelectionSetChangedEvent } from "../../editor/SelectionSet";
 import { DocumentProperty } from "../../editor/DocumentProperty";
 import { DocumentObject } from "../../editor/DocumentObject";
 import { SetPropertyCommand } from "../../editor/commands/SetPropertyCommand";
+
 @customElement("ds-property-editor")
 export class PropertyEditor extends EditorElement {
     static override styles = [styles];
@@ -77,42 +82,90 @@ export class PropertyEditor extends EditorElement {
         return [...commonProperties.values()];
     }
 
+    private _getPropertyInputType(property: DocumentProperty) {
+        switch (property.type) {
+            case "number":
+                return "number";
+            default:
+                return "text";
+        }
+    }
+
+    private _updateProperty(property: DocumentProperty, value: any) {
+        const newProp = property.clone();
+        newProp.value = value;
+        this._editor?.applyCommand(
+            new SetPropertyCommand(this._editor.selectionSet.toArray(), newProp)
+        );
+    }
+
+    private _getInputSuffix(property: DocumentProperty) {
+        switch (property.units) {
+            case "meters":
+                return "m";
+            default:
+                return property.units ?? "";
+        }
+    }
+
+    private _renderInputProperty(property: DocumentProperty) {
+        return html` <sl-input
+            .type=${this._getPropertyInputType(property)}
+            ?disabled=${property.readonly}
+            pill
+            filled
+            size="small"
+            clearable
+            value=${property.value !== null ? property.value : "—"}
+            @sl-input=${(e: any) => {
+                const newProp = property.clone();
+                newProp.value = e.target.value;
+                this._editor?.applyCommand(
+                    new SetPropertyCommand(this._editor.selectionSet.toArray(), newProp)
+                );
+            }}
+        >
+            <span slot="suffix">${this._getInputSuffix(property)}</span>
+        </sl-input>`;
+    }
+
+    private _renderColorProperty(property: DocumentProperty) {
+        return html` <div class="color-property">
+            ${this._renderInputProperty(property)}
+            <sl-color-picker
+                size="small"
+                .disabled=${property.readonly}
+                .value=${property.value}
+                @sl-change=${(e: any) => {
+                    this._updateProperty(property, e.target.value);
+                }}
+            ></sl-color-picker>
+        </div>`;
+    }
+
+    private _renderProperty(property: DocumentProperty) {
+        return choose(property.type, [
+            ["number", () => this._renderInputProperty(property)],
+            ["string", () => this._renderInputProperty(property)],
+            ["color", () => this._renderColorProperty(property)],
+        ]);
+    }
+
     override render() {
         return html`
             <div class="container">
                 <div class="main">
                     <!-- Main content goes here -->
-                    <table>
+                    <div class="two-column-grid">
                         ${this._mergedProperties.map(
                             (property) => html`
-                                <tr>
-                                    <td class=${classMap({ readonly: property.readonly })}>
-                                        ${property.name}
-                                    </td>
-                                    <td>
-                                        <sl-input
-                                            ?disabled=${property.readonly}
-                                            pill
-                                            filled
-                                            size="small"
-                                            clearable
-                                            value=${property.value !== null ? property.value : "—"}
-                                            @sl-input=${(e: any) => {
-                                                const newProp = property.clone();
-                                                newProp.value = e.target.value;
-                                                this._editor?.applyCommand(
-                                                    new SetPropertyCommand(
-                                                        this._editor.selectionSet.toArray(),
-                                                        newProp
-                                                    )
-                                                );
-                                            }}
-                                        ></sl-input>
-                                    </td>
-                                </tr>
+                                <span class=${classMap({ readonly: property.readonly })}>
+                                    ${property.name}
+                                </span>
+                                ${this._renderProperty(property)}
                             `
                         )}
-                    </table>
+                    </div>
                 </div>
                 <footer class="footer">
                     <span>Num selected : ${this._numSelectedItems}</span>

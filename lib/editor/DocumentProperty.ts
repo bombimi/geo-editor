@@ -1,26 +1,23 @@
-export type DocumentPropertyType = "string" | "number" | "boolean" | "array" | "object"; // Types of properties for document objects
+export type DocumentPropertyType = "color" | "string" | "number" | "boolean" | "array" | "object"; // Types of properties for document objects
 
-export type DocumentPropertyOptions = {
-    readonly?: boolean; // Optional flag to indicate if the property is read-only
+export type DocumentPropertyUnits = "meters";
+
+export type DocumentPropertyMetadata = {
+    readonly?: boolean; // Flag to indicate if the property is read-only
+    units?: DocumentPropertyUnits; // Units for the property value
 };
 
 export class DocumentProperty {
-    private _readonly = false; // Flag to indicate if the property is read-only
-
     constructor(
         private _name: string,
         private _type: DocumentPropertyType,
         private _value: any,
-        options: DocumentPropertyOptions = {}
-    ) {
-        this.readonly = options?.readonly ?? false; // Set the read-only flag based on options or default to false
-    }
+        private _metadata: DocumentPropertyMetadata = {}
+    ) {}
 
     // Create a clone of the property with the same name, type, and value
     public clone(): DocumentProperty {
-        return new DocumentProperty(this._name, this._type, this._value, {
-            readonly: this._readonly,
-        });
+        return new DocumentProperty(this._name, this._type, this._value, this._metadata);
     }
 
     // Get the name of the property
@@ -45,11 +42,19 @@ export class DocumentProperty {
 
     // Get the read-only flag for the property
     get readonly() {
-        return this._readonly; // Get the read-only flag for the property
+        return this._metadata.readonly ?? false;
     }
 
     // Set the read-only flag for the property
     set readonly(readonly: boolean) {
-        this._readonly = readonly;
+        this._metadata.readonly = readonly;
+    }
+
+    get units() {
+        return this._metadata.units;
+    }
+
+    set unit(unit: DocumentPropertyUnits) {
+        this._metadata.units = unit;
     }
 }

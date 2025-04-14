@@ -1,9 +1,9 @@
-import { html, LitElement } from "lit";
+import { html } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 
-import { styles } from "./Map.style";
+import { styles } from "./MapboxMap.style";
 
-import { Map as MapboxMap, MarkerOptions } from "mapbox-gl";
+import { Map as MapboxGLMap, MapMouseEvent, MarkerOptions } from "mapbox-gl";
 import mapboxgl from "mapbox-gl";
 import { merge } from "lodash-es";
 import { watch } from "../../ui-utils/watch";
@@ -15,6 +15,7 @@ import {
     ClickableMarkerEvent,
 } from "./ClickableMarker";
 import { BaseElement } from "../../ui-lib/BaseElement";
+import { uuidv4 } from "editor/Utils";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
 
@@ -49,18 +50,19 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
 }
 
 @customElement("ds-map")
-export class Map extends BaseElement {
+export class MapboxMap extends BaseElement {
     static override styles = [styles];
 
     @property({ type: Object }) config: MapConfig = makeConfig();
     @property({ type: Array }) selectionSet: string[] = [];
 
-    private _map?: MapboxMap;
+    private _map?: MapboxGLMap;
     private _config = this.config;
-    private _activeLayers: any[] = [];
     private _pointFeatures: Feature[] = [];
     private _geoJsonLoaded = false;
     private _markers: ClickableMarker[] = [];
+    private _hoveredFeatureId: string | number | undefined;
+    private _idToGuid = new Map<number, string>();
 
     @state() protected _cssLoaded = false;
 
@@ -123,10 +125,16 @@ export class Map extends BaseElement {
                 marker.remove();
             }
             this._markers = [];
+            this._idToGuid.clear();
             this._geoJsonLoaded = false;
         }
 
         const filteredFeatures = geo.features.filter((feature) => feature.geometry !== null);
+        let id = 0;
+        for (const feature of filteredFeatures) {
+            feature.id = id++;
+            this._idToGuid.set(feature.id, feature.properties?.__guid || uuidv4());
+        }
 
         this._map.addSource("map-data", {
             type: "geojson",
@@ -166,12 +174,68 @@ export class Map extends BaseElement {
             source: "map-data",
             paint: {
                 "line-color": ["coalesce", ["get", "stroke"], color],
-                "line-width": ["coalesce", ["get", "stroke-width"], 2],
+                "line-width": ["coalesce", ["get", "stroke-width"], 8],
                 "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
             },
             filter: ["==", ["geometry-type"], "LineString"],
         });
 
+        this._map.addLayer({
+            id: "map-data-line-select",
+            type: "line",
+            source: "map-data",
+            paint: {
+                "line-color": "yellow",
+                "line-width": 8,
+                "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.8, 0],
+            },
+            filter: ["==", ["geometry-type"], "LineString"],
+        });
+
+        this._map?.on("mousemove", "map-data-line-select", (e: MapMouseEvent) => {
+            if (this._map) {
+                if (this._hoveredFeatureId) {
+                    this._map.setFeatureState(
+                        { source: "map-data", id: this._hoveredFeatureId },
+                        { selected: false }
+                    );
+                    this._hoveredFeatureId = undefined;
+                }
+                if (e.features && e.features.length) {
+                    this._hoveredFeatureId = e.features[0].id;
+                    this._map.setFeatureState(
+                        { source: "map-data", id: this._hoveredFeatureId as number },
+                        { selected: true }
+                    );
+                    this._map.getCanvas().style.cursor = "pointer";
+                }
+                // // this._map.getCanvas().style.cursor = features && features.length ? "pointer" : "";
+            }
+        });
+
+        // When the mouse leaves the state-fill layer, update the feature state of the
+        // previously hovered feature.
+        this._map.on("mouseleave", "map-data-line-select", () => {
+            if (this._map) {
+                if (this._hoveredFeatureId !== undefined) {
+                    this._map.setFeatureState(
+                        { source: "map-data", id: this._hoveredFeatureId as number },
+                        { selected: false }
+                    );
+                }
+                this._hoveredFeatureId = undefined;
+                this._map.getCanvas().style.cursor = "";
+            }
+        });
+
+        this._map.on("click", "map-data-line", (e: MapMouseEvent) => {
+            if (this._map && e.features && e.features.length) {
+                this._dispatchEvent(
+                    "object-selected",
+                    this._idToGuid.get(e.features[0].id as number)
+                );
+            }
+        });
         this._addMarkers(geo);
         this._geoJsonLoaded = true;
     }
@@ -283,14 +347,6 @@ export class Map extends BaseElement {
                 .setLngLat((point.geometry as any).coordinates)
                 .onClick((e: ClickableMarkerEvent) => {
                     this._dispatchEvent("object-selected", e.marker.guid);
-                    // bindPopup(
-                    //     {
-                    //         lngLat: point.geometry.coordinates,
-                    //         features: [point],
-                    //     },
-                    //     context,
-                    //     writable
-                    // );
                 })
                 .onDragEnd((e: ClickableMarkerDragEndEvent) => {
                     this._dispatchEvent("object-moved", {
@@ -305,16 +361,7 @@ export class Map extends BaseElement {
                 marker.getElement().style.setProperty("cursor", "pointer", "important");
             });
 
-            marker.getElement().addEventListener("touchstart", () => {
-                // bindPopup(
-                //     {
-                //         lngLat: point.geometry.coordinates,
-                //         features: [point],
-                //     },
-                //     context,
-                //     writable
-                // );
-            });
+            marker.getElement().addEventListener("touchstart", () => {});
 
             // Update the dot in the Marker for Dark base map style
             // if (activeStyle === "Dark")
@@ -344,7 +391,7 @@ export class Map extends BaseElement {
                 return;
             }
 
-            this._map = new MapboxMap({
+            this._map = new MapboxGLMap({
                 container: this._mapContainer,
                 style: this._config.style,
                 projection: this._config.projection,
@@ -353,7 +400,6 @@ export class Map extends BaseElement {
                 pitch: this._config.map.pitch,
             });
             this._map.on("load", () => {
-                this._addCheckedLayers();
                 resolve();
             });
         });
@@ -382,18 +428,6 @@ export class Map extends BaseElement {
         //   this._disableRightMouseDragRotate();
     }
 
-    private async _addCheckedLayers() {
-        if (!this._map) {
-            return;
-        }
-
-        for (const layer of this._activeLayers) {
-            this._addLayer(layer);
-            while (!this._map.loaded()) {
-                await timeout(50);
-            }
-        }
-    }
     private _addLayer(layer: any) {
         if (!this._map) {
             return;

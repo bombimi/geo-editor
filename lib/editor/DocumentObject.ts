@@ -71,16 +71,24 @@ export class DocumentObject {
         return this._findProperty("name")?.value;
     }
 
+    public get displayName() {
+        return this.name;
+    }
+
     public get type() {
         return this._findProperty("type")?.value;
     }
 
+    public get displayType() {
+        return this.type;
+    }
+
     public get children(): DocumentObject[] {
-        return this._children; // Get the array of child document objects
+        return this._children;
     }
 
     public get properties(): DocumentProperty[] {
-        return this._properties; // Get the array of properties for the document object
+        return this._properties;
     }
 
     public getObjectsFromGuids(guids: string[]): DocumentObject[] {
@@ -97,7 +105,7 @@ export class DocumentObject {
     }
 
     public addChild(child: DocumentObject): DocumentObject {
-        this._children.push(child); // Add a child document object to the array
+        this._children.push(child);
         this.onChildAdded.raise({ child, object: this });
         return child;
     }
@@ -113,6 +121,6 @@ export class DocumentObject {
     }
 
     private _findProperty(name: string): DocumentProperty | undefined {
-        return this._properties.find((property) => property.name === name); // Find a property by its name
+        return this._properties.find((property) => property.name === name);
     }
 }

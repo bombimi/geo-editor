@@ -1,9 +1,9 @@
-import { Map } from "./Map";
+import { MapboxMap } from "./MapboxMap";
 
-export * from "./Map";
+export * from "./MapboxMap";
 
 declare global {
     interface HTMLElementTagNameMap {
-        "ds-map": Map;
+        "ds-map": MapboxMap;
     }
 }

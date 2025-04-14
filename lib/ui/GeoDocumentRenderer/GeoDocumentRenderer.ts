@@ -4,8 +4,8 @@ import { EditorElement } from "../EditorElement";
 
 import { styles } from "./GeoDocumentRenderer.style";
 
-import "../../mapbox/Map/Map";
-import { Map } from "../../mapbox/Map/Map";
+import "../../mapbox/Map/MapboxMap";
+import { MapboxMap } from "../../mapbox/Map/MapboxMap";
 import { StarsStyle } from "./Stars.style";
 import { GeoDocument } from "../../geo/GeoDocument";
 import { Bounds } from "../../geo/GeoJson";
@@ -18,7 +18,7 @@ export class GeoDocumentRenderer extends EditorElement {
 
     private _bounds?: Bounds;
 
-    @query("#map") protected _map?: Map;
+    @query("#map") protected _map?: MapboxMap;
 
     public zoomIn() {
         if (this._map) {
@@ -60,10 +60,6 @@ export class GeoDocumentRenderer extends EditorElement {
             this._selectionSet = this._editor.selectionSet.toArray();
         }
     }
-    // protected override firstUpdated(changedProperties: PropertyValues): void {
-    //     super.firstUpdated(changedProperties);
-    //     this._editorInit();
-    // }
 
     private _objectSelected(guid: string) {
         if (this._editor) {

@@ -1,4 +1,7 @@
+import { DocumentProperty } from "editor/DocumentProperty";
 import { GeoObject } from "../GeoObject";
+import { GeoJson } from "geo/GeoJson";
+import { FeatureCollection } from "geojson";
 
 export class LineStringObject extends GeoObject {
     public constructor(feature: GeoJSON.Feature) {
@@ -6,13 +9,47 @@ export class LineStringObject extends GeoObject {
             throw new Error("Feature geometry must be of type LineString.");
         }
         super(feature);
+        this.updateProperty(
+            new DocumentProperty("Num points", "number", this._getCoordinates().length, {
+                readonly: true,
+            })
+        );
+        this.updateProperty(
+            new DocumentProperty("Length", "number", this.totalLength, {
+                readonly: true,
+                units: "meters",
+            })
+        );
     }
 
     public override move(deltaLat: number, deltaLon: number): void {
+        this._setCoordinates(
+            this._getCoordinates().map(([lon, lat]) => [lon + deltaLon, lat + deltaLat])
+        );
+    }
+
+    public get totalLength(): number {
+        const geo = new GeoJson({
+            features: [this._feature],
+        } as FeatureCollection);
+        const len = geo.totalLength();
+        if (len) {
+            return parseFloat(len.toFixed(2));
+        }
+        return 0;
+    }
+
+    private _getCoordinates(): [number, number][] {
         if (this._feature.geometry.type === "LineString") {
-            this._feature.geometry.coordinates = this._feature.geometry.coordinates.map(
-                ([lon, lat]) => [lon + deltaLon, lat + deltaLat]
-            );
+            return this._feature.geometry.coordinates as [number, number][];
+        } else {
+            throw new Error("Geometry type is not LineString.");
+        }
+    }
+
+    private _setCoordinates(coordinates: [number, number][]): void {
+        if (this._feature.geometry.type === "LineString") {
+            this._feature.geometry.coordinates = coordinates;
         } else {
             throw new Error("Geometry type is not LineString.");
         }
