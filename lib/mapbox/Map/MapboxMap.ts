@@ -120,6 +120,7 @@ export class MapboxMap extends BaseElement {
             this._map.removeLayer("map-data-fill");
             this._map.removeLayer("map-data-fill-outline");
             this._map.removeLayer("map-data-line");
+            this._map.removeLayer("map-data-line-select");
             this._map.removeSource("map-data");
             for (const marker of this._markers) {
                 marker.remove();

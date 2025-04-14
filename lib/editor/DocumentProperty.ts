@@ -5,6 +5,10 @@ export type DocumentPropertyUnits = "meters";
 export type DocumentPropertyMetadata = {
     readonly?: boolean; // Flag to indicate if the property is read-only
     units?: DocumentPropertyUnits; // Units for the property value
+    min?: number; // Minimum value for the property (if applicable)
+    max?: number; // Maximum value for the property (if applicable)
+    step?: number; // Step value for the property (if applicable)
+    pattern?: string; // Pattern for validating the property value (if applicable)
 };
 
 export class DocumentProperty {
@@ -56,5 +60,9 @@ export class DocumentProperty {
 
     set unit(unit: DocumentPropertyUnits) {
         this._metadata.units = unit;
+    }
+
+    get metadata() {
+        return this._metadata;
     }
 }

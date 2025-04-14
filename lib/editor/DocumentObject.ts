@@ -25,10 +25,10 @@ export class DocumentObject {
     public onChildAdded = new EditorEvent<DocumentObjectChildEvent>(); // Event triggered when a child is added
     public onChildRemoved = new EditorEvent<DocumentObjectChildEvent>(); // Event triggered when a child is removed
 
-    public readonly guid: string = uuidv4(); // Unique identifier for the document object
+    public readonly guid: string = uuidv4();
 
-    private _children: DocumentObject[] = []; // Array of child document objects
-    private _properties: DocumentProperty[] = []; // Array of properties for the document object
+    private _children: DocumentObject[] = [];
+    private _properties: DocumentProperty[] = [];
     private _selected = false;
 
     constructor(name: string, type: DocumentObjectType, properties: DocumentProperty[] = []) {
@@ -39,21 +39,21 @@ export class DocumentObject {
         );
 
         for (const prop of properties) {
-            this.updateProperty(prop); // Update properties for the document object
+            this.updateProperty(prop);
         }
     }
 
     public addProperty(prop: DocumentProperty): void {
-        this._properties.push(prop); // Add a property to the document object
+        this._properties.push(prop);
         this.onPropertyAdded.raise({ property: prop, object: this });
     }
 
     public getProperty(name: string): DocumentProperty | undefined {
-        return this._findProperty(name); // Get a property by its name
+        return this._findProperty(name);
     }
 
     public updateProperty(prop: DocumentProperty): void {
-        const existingProp = this._findProperty(prop.name); //
+        const existingProp = this._findProperty(prop.name);
         if (existingProp) {
             existingProp.value = prop.value;
             this.onPropertyChange.raise({ property: existingProp, object: this });
@@ -107,6 +107,7 @@ export class DocumentObject {
     public addChild(child: DocumentObject): DocumentObject {
         this._children.push(child);
         this.onChildAdded.raise({ child, object: this });
+        this._attachEvents(child);
         return child;
     }
 
@@ -118,6 +119,16 @@ export class DocumentObject {
     // Find a child document object by its GUID
     public getChild(guid: string): DocumentObject | undefined {
         return this._children.find((child) => child.guid === guid);
+    }
+
+    private _attachEvents(child: DocumentObject) {
+        child.onChange.add(() => this.onChange.raise(this));
+        child.onDelete.add(() => this.onChange.raise(this));
+        child.onPropertyAdded.add(() => this.onChange.raise(this));
+        child.onPropertyChange.add(() => this.onChange.raise(this));
+        child.onPropertyRemoved.add(() => this.onChange.raise(this));
+        child.onChildAdded.add(() => this.onChange.raise(this));
+        child.onChildRemoved.add(() => this.onChange.raise(this));
     }
 
     private _findProperty(name: string): DocumentProperty | undefined {

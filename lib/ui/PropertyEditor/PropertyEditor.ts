@@ -4,6 +4,7 @@ import "@shoelace-style/shoelace/dist/components/color-picker/color-picker.js";
 import { html } from "lit";
 import { classMap } from "lit/directives/class-map.js";
 import { choose } from "lit/directives/choose.js";
+import { ifDefined } from "lit/directives/if-defined.js";
 
 import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
@@ -114,12 +115,23 @@ export class PropertyEditor extends EditorElement {
             ?disabled=${property.readonly}
             pill
             filled
+            min=${ifDefined(property.metadata.min)}
+            max=${ifDefined(property.metadata.max)}
+            step=${ifDefined(property.metadata.step)}
+            pattern=${ifDefined(property.metadata.pattern)}
             size="small"
             clearable
             value=${property.value !== null ? property.value : "—"}
             @sl-input=${(e: any) => {
+                if (!e.target.validity.valid) {
+                    return;
+                }
                 const newProp = property.clone();
-                newProp.value = e.target.value;
+                if (property.type === "number") {
+                    newProp.value = parseFloat(e.target.value);
+                } else {
+                    newProp.value = e.target.value;
+                }
                 this._editor?.applyCommand(
                     new SetPropertyCommand(this._editor.selectionSet.toArray(), newProp)
                 );

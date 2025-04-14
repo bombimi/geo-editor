@@ -10,6 +10,7 @@ import { StarsStyle } from "./Stars.style";
 import { GeoDocument } from "../../geo/GeoDocument";
 import { Bounds } from "../../geo/GeoJson";
 import { MoveObjectCommand } from "../../geo/modifiers/MoveObject";
+
 @customElement("ds-document-renderer")
 export class GeoDocumentRenderer extends EditorElement {
     static override styles = [styles, StarsStyle];
@@ -45,12 +46,21 @@ export class GeoDocumentRenderer extends EditorElement {
 
     private _editorInit() {
         if (this._editor && this._map) {
-            const geo = (this._editor?.document as GeoDocument).geoJson;
-            if (geo) {
-                this._map.setGeoJsonLayer(geo.features);
-                this._bounds = geo.bbox();
-                this.fitToBounds();
-            }
+            this._editor.document?.onChange.add(() => {
+                if (this._editor) {
+                    this._setGeo();
+                }
+            });
+            this._setGeo();
+        }
+    }
+
+    private _setGeo() {
+        const geo = (this._editor?.document as GeoDocument).geoJson;
+        if (this._map && geo) {
+            this._map.setGeoJsonLayer(geo.features);
+            this._bounds = geo.bbox();
+            this.fitToBounds();
         }
     }
 
@@ -80,11 +90,10 @@ export class GeoDocumentRenderer extends EditorElement {
                 @object-moved=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(
-                            new MoveObjectCommand(
-                                this._editor.selectionSet.toArray(),
-                                e.detail.deltaLon,
-                                e.detail.deltaLat
-                            )
+                            new MoveObjectCommand(this._editor.selectionSet.toArray(), {
+                                lon: e.detail.deltaLon,
+                                lat: e.detail.deltaLat,
+                            })
                         );
                     }
                 }}

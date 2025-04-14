@@ -1,5 +1,6 @@
 import { Document } from "../editor/Document";
 import { GeoJson, GeoSourceType, GeoSourceTypes } from "./GeoJson";
+import { GeoObject } from "./GeoObject";
 import { Factory } from "./objects/Factory";
 
 export class GeoDocument extends Document {
@@ -11,7 +12,10 @@ export class GeoDocument extends Document {
     }
 
     public get geoJson(): GeoJson | null {
-        return this._geoJson;
+        return new GeoJson({
+            type: "FeatureCollection",
+            features: this.children.map((child) => (child as GeoObject).feature),
+        });
     }
 
     public override async open(blob: Blob, type: string, name: string): Promise<void> {
