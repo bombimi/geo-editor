@@ -31,6 +31,8 @@ export class DocumentObject {
     private _properties: DocumentProperty[] = [];
     private _selected = false;
 
+    private readonly _raiseOnChanged = () => this.onChange.raise(this);
+
     constructor(name: string, type: DocumentObjectType, properties: DocumentProperty[] = []) {
         this.updateProperty(new DocumentProperty("name", "string", name));
         this.updateProperty(new DocumentProperty("type", "string", type, { readonly: true }));
@@ -41,6 +43,8 @@ export class DocumentObject {
         for (const prop of properties) {
             this.updateProperty(prop);
         }
+
+        this._attachEvents(this);
     }
 
     public addProperty(prop: DocumentProperty): void {
@@ -116,6 +120,7 @@ export class DocumentObject {
         if (child) {
             this._children = this._children.filter((c) => c.guid !== guid);
             this.onChildRemoved.raise({ child, object: this });
+            this._detachEvents(child);
             return child;
         }
         return undefined;
@@ -126,14 +131,28 @@ export class DocumentObject {
         return this._children.find((child) => child.guid === guid);
     }
 
-    private _attachEvents(child: DocumentObject) {
-        child.onChange.add(() => this.onChange.raise(this));
-        child.onDelete.add(() => this.onChange.raise(this));
-        child.onPropertyAdded.add(() => this.onChange.raise(this));
-        child.onPropertyChange.add(() => this.onChange.raise(this));
-        child.onPropertyRemoved.add(() => this.onChange.raise(this));
-        child.onChildAdded.add(() => this.onChange.raise(this));
-        child.onChildRemoved.add(() => this.onChange.raise(this));
+    private _attachEvents(object: DocumentObject) {
+        if (object !== this) {
+            object.onChange.add(this._raiseOnChanged);
+        }
+        object.onDelete.add(this._raiseOnChanged);
+        object.onPropertyAdded.add(this._raiseOnChanged);
+        object.onPropertyChange.add(this._raiseOnChanged);
+        object.onPropertyRemoved.add(this._raiseOnChanged);
+        object.onChildAdded.add(this._raiseOnChanged);
+        object.onChildRemoved.add(this._raiseOnChanged);
+    }
+
+    private _detachEvents(object: DocumentObject) {
+        if (object !== this) {
+            object.onChange.remove(this._raiseOnChanged);
+        }
+        object.onDelete.remove(this._raiseOnChanged);
+        object.onPropertyAdded.remove(this._raiseOnChanged);
+        object.onPropertyChange.remove(this._raiseOnChanged);
+        object.onPropertyRemoved.remove(this._raiseOnChanged);
+        object.onChildAdded.remove(this._raiseOnChanged);
+        object.onChildRemoved.remove(this._raiseOnChanged);
     }
 
     private _findProperty(name: string): DocumentProperty | undefined {
