@@ -23,6 +23,7 @@ import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
 import "../DocumentEditor";
 import "../DocumentHistory";
 import { UndoBufferEventArgs } from "editor/UndoBuffer";
+import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
 
 @customElement("ds-editor-window")
 export class EditorWindow extends EditorElement {
@@ -32,6 +33,7 @@ export class EditorWindow extends EditorElement {
     @state() protected _hasUndo = false;
     @state() protected _hasRedo = false;
     @state() protected _darkMode = true;
+    @state() protected _deleteEnabled = false;
 
     @query("ds-document-renderer") protected _documentRenderer?: GeoDocumentRenderer;
 
@@ -54,6 +56,21 @@ export class EditorWindow extends EditorElement {
                     this._editor?.redo();
                 }
             }
+        }
+    }
+
+    protected override _selectionSetChanged(_args: any): void {
+        super._selectionSetChanged(_args);
+        if (this._editor) {
+            this._deleteEnabled = this._editor.selectionSet.length > 0;
+        }
+    }
+
+    protected override _editorChanged(): void {
+        super._editorChanged();
+        if (this._editor) {
+            this._editor.undoBuffer.onChanged.add(this._updateUndoRedo.bind(this));
+            this._editor.undoBuffer.onCaretChanged.add(this._updateUndoRedo.bind(this));
         }
     }
 
@@ -98,13 +115,17 @@ export class EditorWindow extends EditorElement {
 
     private async _openFile(provider: DocumentProvider, blob: Blob, name: string) {
         this._document = await provider.openDocument(blob, name);
-        this._editor = new Editor(this._document);
-        this._editor.undoBuffer.onChanged.add(this._updateUndoRedo.bind(this));
-        this._editor.undoBuffer.onCaretChanged.add(this._updateUndoRedo.bind(this));
+        const editor = new Editor(this._document);
+        this.editorGuid = editor.guid;
 
         return this._document;
     }
 
+    private _deleteSelectedObjects() {
+        if (this._editor) {
+            this._editor.applyCommand(new DeleteObjectCommand(this._editor.selectionSet.toArray()));
+        }
+    }
     private _promptForFile(provider: DocumentProvider) {
         const input = Object.assign(document.createElement("input"), {});
 
@@ -205,7 +226,11 @@ export class EditorWindow extends EditorElement {
             </div>
             <div class="side-right-controls">
                 <sl-icon-button name="arrows-move"></sl-icon-button>
-                <sl-icon-button name="trash3"></sl-icon-button>
+                <sl-icon-button
+                    name="trash3"
+                    ?disabled=${!this._deleteEnabled}
+                    @click=${() => this._deleteSelectedObjects()}
+                ></sl-icon-button>
                 <span></span>
                 <sl-icon-button name="geo-alt"></sl-icon-button>
                 <sl-icon-button library="app-icons" name="line"></sl-icon-button>

@@ -10,12 +10,15 @@ export class Editor {
 
     private _providers = getGeoDocumentProviders();
     private _undoBuffer = new UndoBuffer();
-    private _document: Document | null = null;
+    private _document: Document;
     private _selectionSet: SelectionSet = new SelectionSet();
 
     constructor(document: Document) {
         this._document = document;
         editorManager.add(this);
+        this._undoBuffer.onCaretChanged.add(() => {
+            this.document?.onChange.raise(this._document);
+        });
     }
 
     dispose() {
@@ -43,7 +46,7 @@ export class Editor {
             throw new Error("No document loaded.");
         }
         const command = this._undoBuffer.back();
-        console.log("Undoing command", command.name, this._document.name);
+        console.log("Undoing command", command.description, this._document.name);
 
         if (command) {
             command.undo(this._document);
@@ -54,8 +57,9 @@ export class Editor {
         if (this._document === null) {
             throw new Error("No document loaded.");
         }
-        console.log("Redoing command", this._document.name);
         const command = this._undoBuffer.forward();
+        console.log("Redoing command", command.description, this._document.name);
+
         if (command) {
             command.do(this._document);
         }
@@ -65,8 +69,11 @@ export class Editor {
         if (this._document === null) {
             throw new Error("No document loaded.");
         }
-        console.log("Applying command", command.name, this._document.name);
+        console.log("Applying command", command.description, this._document.name);
         command.do(this._document);
         this._undoBuffer.push(command);
+        if (command.clearSelection()) {
+            this._selectionSet.clear();
+        }
     }
 }

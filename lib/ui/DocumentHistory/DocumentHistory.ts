@@ -8,6 +8,8 @@ import { EditorElement } from "ui/EditorElement";
 import { Command } from "editor/Command";
 import { UndoBufferCaretChangedEventArgs, UndoBufferChangedEventArgs } from "editor/UndoBuffer";
 
+import { createHtmlWithHexColors } from "ui-lib/Utils";
+
 @customElement("ds-document-history")
 export class DocumentHistory extends EditorElement {
     static override styles = [styles];
@@ -44,12 +46,14 @@ export class DocumentHistory extends EditorElement {
                 (command, index) =>
                     html`<div
                         class="command ${index === this._caretPosition ? "selected" : ""}"
-                        @click=${() => this._editor?.undoBuffer.setCaretPosition(index)}
+                        @click=${() => {
+                            /*this._editor?.undoBuffer.moveCaret(index) */
+                        }}
                     >
                         ${index === this._caretPosition
                             ? html`<sl-icon name="caret-right-fill"></sl-icon>`
                             : ""}
-                        <span>${command.displayName}</span>
+                        <span>${createHtmlWithHexColors(command.description)}</span>
                     </div>`
             )}
         </div>`;

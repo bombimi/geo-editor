@@ -15,15 +15,15 @@ export type DocumentObjectChildEvent = {
 };
 
 export class DocumentObject {
-    public onChange = new EditorEvent<DocumentObject>(); // Event triggered when the document object changes
-    public onDelete = new EditorEvent<DocumentObject>(); // Event triggered when the document object is deleted
+    public onChange = new EditorEvent<DocumentObject>();
+    public onDelete = new EditorEvent<DocumentObject>();
 
-    public onPropertyChange = new EditorEvent<DocumentPropertyEvent>(); // Event triggered when a property changes
-    public onPropertyAdded = new EditorEvent<DocumentPropertyEvent>(); // Event triggered when a property is added
-    public onPropertyRemoved = new EditorEvent<DocumentPropertyEvent>(); // Event triggered when a property is removed
+    public onPropertyChange = new EditorEvent<DocumentPropertyEvent>();
+    public onPropertyAdded = new EditorEvent<DocumentPropertyEvent>();
+    public onPropertyRemoved = new EditorEvent<DocumentPropertyEvent>();
 
-    public onChildAdded = new EditorEvent<DocumentObjectChildEvent>(); // Event triggered when a child is added
-    public onChildRemoved = new EditorEvent<DocumentObjectChildEvent>(); // Event triggered when a child is removed
+    public onChildAdded = new EditorEvent<DocumentObjectChildEvent>();
+    public onChildRemoved = new EditorEvent<DocumentObjectChildEvent>();
 
     public readonly guid: string = uuidv4();
 
@@ -111,9 +111,14 @@ export class DocumentObject {
         return child;
     }
 
-    public removeChild(child: DocumentObject): void {
-        this._children = this._children.filter((c) => c !== child);
-        this.onChildRemoved.raise({ child, object: this });
+    public removeChild(guid: string): DocumentObject | undefined {
+        const child = this.getChild(guid);
+        if (child) {
+            this._children = this._children.filter((c) => c.guid !== guid);
+            this.onChildRemoved.raise({ child, object: this });
+            return child;
+        }
+        return undefined;
     }
 
     // Find a child document object by its GUID

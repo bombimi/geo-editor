@@ -32,7 +32,7 @@ export class PointObject extends GeoObject {
 
     private _setProperties(): void {
         const [lon, lat] = this._getCoordinates();
-        this.updateProperty(new DocumentProperty("__lat", "string", lat, { readonly: true }));
-        this.updateProperty(new DocumentProperty("__lon", "string", lon, { readonly: true }));
+        this.updateProperty(new DocumentProperty("Latitude", "string", lat, { readonly: true }));
+        this.updateProperty(new DocumentProperty("Longitude", "string", lon, { readonly: true }));
     }
 }

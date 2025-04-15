@@ -23,16 +23,27 @@ export class PropertyEditor extends EditorElement {
     @state() protected _mergedProperties: DocumentProperty[] = [];
     @state() protected _currentObjects: DocumentObject[] = [];
 
-    protected override _selectionSetChanged(event: SelectionSetChangedEvent): void {
-        if (this._editor && this._editor.document) {
-            this._numSelectedItems = event.selectionSet.length;
-            this._removeEvents();
+    protected override _editorChanged(): void {
+        super._editorChanged();
+        this._editor?.document.onChange.add(() => {
+            this._resetObjects();
+        });
+    }
 
-            this._currentObjects = this._editor.document.getObjectsFromGuids(
-                event.selectionSet.toArray()
-            );
-            this._addEvents();
-            this._resetProperties();
+    protected _resetObjects() {
+        this._removeEvents();
+        this._numSelectedItems = this._editor?.selectionSet.length ?? 0;
+        this._currentObjects =
+            this._editor?.document.getObjectsFromGuids(
+                this._editor?.selectionSet.toArray() ?? []
+            ) ?? [];
+        this._addEvents();
+        this._resetProperties();
+    }
+
+    protected override _selectionSetChanged(): void {
+        if (this._editor && this._editor.document) {
+            this._resetObjects();
         }
     }
 

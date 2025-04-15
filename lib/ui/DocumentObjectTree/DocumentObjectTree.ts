@@ -141,6 +141,9 @@ export class DocumentObjectTree extends EditorElement {
         super._editorChanged();
         if (this._editor) {
             this._document = this._editor.document;
+            this._document.onChange.add(() => {
+                this._makeTree();
+            });
             this._makeTree();
         }
     }

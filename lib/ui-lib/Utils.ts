@@ -1,3 +1,5 @@
+import { html, TemplateResult } from "lit";
+
 /**
  * Converts a camelCase string to a human-readable format.
  * Adds spaces between words and capitalizes the initial character.
@@ -18,4 +20,26 @@ export function camelCaseToReadable(input: string): string {
         }
     }
     return res;
+}
+
+/**
+ * Take a string and return HTML with hex colors highlighted.
+ *
+ * @param text - The text to be parsed for hex colors.
+ * @returns Lit HTML TemplateResult with hex colors highlighted.
+ */
+export function createHtmlWithHexColors(text: string): TemplateResult {
+    const hexColorRegex = /#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/g;
+    const parts = text.split(hexColorRegex);
+
+    return html`${parts.map((part, index) => {
+        if (index % 2 === 1) {
+            const color = `#${part}`;
+            return html`${color}
+                <span
+                    style="display: inline-block; width: 12px; height: 12px; background-color: ${color}; margin-left: 4px; border: 1px solid #000;"
+                ></span>`;
+        }
+        return part;
+    })}`;
 }

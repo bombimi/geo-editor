@@ -229,7 +229,7 @@ export class MapboxMap extends BaseElement {
             }
         });
 
-        this._map.on("click", "map-data-line", (e: MapMouseEvent) => {
+        this._map.on("click", "map-data-line-select", (e: MapMouseEvent) => {
             if (this._map && e.features && e.features.length) {
                 this._dispatchEvent(
                     "object-selected",
@@ -358,6 +358,7 @@ export class MapboxMap extends BaseElement {
                 })
                 .addTo(this._map!);
 
+            marker.setSelected(this.selectionSet.includes(marker.guid));
             marker.getElement().addEventListener("mouseover", () => {
                 marker.getElement().style.setProperty("cursor", "pointer", "important");
             });

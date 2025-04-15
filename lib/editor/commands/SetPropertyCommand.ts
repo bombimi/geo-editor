@@ -3,7 +3,7 @@ import { Document } from "../Document";
 import { DocumentProperty } from "../DocumentProperty";
 
 export class SetPropertyCommand extends Command {
-    private _oldProps = new Map<string, DocumentProperty | undefined>(); // Store the old property value for undo
+    private _oldProps = new Map<string, DocumentProperty | undefined>();
 
     constructor(
         selectionSet: string[],
@@ -12,7 +12,11 @@ export class SetPropertyCommand extends Command {
         super("SetProperty", selectionSet);
     }
 
-    public override do(document: Document): void {
+    public override get description(): string {
+        return `Set property ${this._prop.name} to ${this._prop.value}`;
+    }
+
+    public do(document: Document): void {
         for (const guid of this._selectionSet) {
             const feature = document.getChild(guid);
             if (feature) {
@@ -21,7 +25,7 @@ export class SetPropertyCommand extends Command {
             }
         }
     }
-    public override undo(document: Document): void {
+    public undo(document: Document): void {
         for (const guid of this._selectionSet) {
             const feature = document.getChild(guid);
             const oldProp = this._oldProps.get(guid);
@@ -30,5 +34,6 @@ export class SetPropertyCommand extends Command {
                 feature.updateProperty(oldProp);
             }
         }
+        this._oldProps.clear();
     }
 }

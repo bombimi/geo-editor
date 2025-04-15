@@ -1,3 +1,5 @@
+import { cloneDeep } from "lodash-es";
+
 export type DocumentPropertyType = "color" | "string" | "number" | "boolean" | "array" | "object"; // Types of properties for document objects
 
 export type DocumentPropertyUnits = "meters";
@@ -21,7 +23,12 @@ export class DocumentProperty {
 
     // Create a clone of the property with the same name, type, and value
     public clone(): DocumentProperty {
-        return new DocumentProperty(this._name, this._type, this._value, this._metadata);
+        return new DocumentProperty(
+            this._name,
+            this._type,
+            cloneDeep(this._value),
+            cloneDeep(this._metadata)
+        );
     }
 
     // Get the name of the property

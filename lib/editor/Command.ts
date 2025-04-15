@@ -13,8 +13,16 @@ export abstract class Command {
         return camelCaseToReadable(this.name);
     }
 
+    public get description(): string {
+        return this.displayName;
+    }
+
     public getGuid(): string {
         return this.guid;
+    }
+
+    public clearSelection(): boolean {
+        return false;
     }
 
     public abstract do(document: Document): void;

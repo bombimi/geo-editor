@@ -27,7 +27,7 @@ export class UndoBuffer {
         return this._caretPosition;
     }
 
-    public setCaretPosition(value: number | undefined) {
+    private _setCaretPosition(value: number | undefined) {
         if (value !== undefined && value >= 0 && value < this._commands.length) {
             this._caretPosition = value;
             this._raiseCaretChangedEvent();
@@ -47,7 +47,7 @@ export class UndoBuffer {
             this._commands = this._commands.slice(0, this._caretPosition + 1);
         }
         this._commands.push(command);
-        this.setCaretPosition(this._commands.length - 1);
+        this._setCaretPosition(this._commands.length - 1);
         this.onChanged.raise({
             undoBuffer: this,
             command,
@@ -55,10 +55,11 @@ export class UndoBuffer {
             canUndo: this.canGoBack(),
             canRedo: this.canGoForward(),
         });
+        console.log("Pushed command", command, "Caret position", this._caretPosition);
     }
 
     public canGoBack(): boolean {
-        return this._caretPosition !== undefined && this._caretPosition > 0;
+        return this._caretPosition !== undefined && this._caretPosition >= 0;
     }
 
     public canGoForward(): boolean {
@@ -69,10 +70,12 @@ export class UndoBuffer {
         if (this.isEmpty()) {
             throw new Error("UndoBuffer is empty, cannot go back.");
         }
-        if (this._caretPosition === undefined || this._caretPosition <= 0) {
+        if (this._caretPosition === undefined || this._caretPosition < 0) {
             throw new Error("Caret is not set.");
         }
-        return this._moveCaret(-1);
+        const command = this._commands[this._caretPosition];
+        this._moveCaret(-1);
+        return command;
     }
 
     public forward(): Command {
@@ -83,7 +86,8 @@ export class UndoBuffer {
             throw new Error("Caret is at the end, cannot go forward.");
         }
 
-        return this._moveCaret(1);
+        this._moveCaret(1);
+        return this._commands[this._caretPosition];
     }
 
     private _raiseCaretChangedEvent() {
@@ -98,12 +102,12 @@ export class UndoBuffer {
         });
     }
 
-    private _moveCaret(delta: number): Command {
+    private _moveCaret(delta: number) {
         if (this._caretPosition === undefined) {
             throw new Error("Caret position is undefined.");
         }
         this._caretPosition += delta;
+        console.log("Moving caret to", this._caretPosition, "Num commands", this._commands.length);
         this._raiseCaretChangedEvent();
-        return this._commands[this._caretPosition];
     }
 }
