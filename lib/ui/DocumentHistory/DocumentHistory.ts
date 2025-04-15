@@ -40,15 +40,29 @@ export class DocumentHistory extends EditorElement {
         this._editorInit();
     }
 
+    private _moveToCommand(index: number) {
+        if (this._editor) {
+            const diff = index - this._caretPosition;
+            if (diff > 0) {
+                for (let i = 0; i < diff; i++) {
+                    this._editor.redo();
+                }
+            }
+            if (diff < 0) {
+                for (let i = 0; i < -diff; i++) {
+                    this._editor.undo();
+                }
+            }
+        }
+    }
+
     override render() {
         return html`<div class="container">
             ${this._history.map(
                 (command, index) =>
                     html`<div
                         class="command ${index === this._caretPosition ? "selected" : ""}"
-                        @click=${() => {
-                            /*this._editor?.undoBuffer.moveCaret(index) */
-                        }}
+                        @click=${() => this._moveToCommand(index)}
                     >
                         ${index === this._caretPosition
                             ? html`<sl-icon name="caret-right-fill"></sl-icon>`

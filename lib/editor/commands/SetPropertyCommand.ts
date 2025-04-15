@@ -13,7 +13,7 @@ export class SetPropertyCommand extends Command {
     }
 
     public override get description(): string {
-        return `Set property ${this._prop.name} to ${this._prop.value}`;
+        return `Set property '${this._prop.name}' to ${this._prop.value}`;
     }
 
     public do(document: Document): void {

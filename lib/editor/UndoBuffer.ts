@@ -55,7 +55,6 @@ export class UndoBuffer {
             canUndo: this.canGoBack(),
             canRedo: this.canGoForward(),
         });
-        console.log("Pushed command", command, "Caret position", this._caretPosition);
     }
 
     public canGoBack(): boolean {
@@ -107,7 +106,6 @@ export class UndoBuffer {
             throw new Error("Caret position is undefined.");
         }
         this._caretPosition += delta;
-        console.log("Moving caret to", this._caretPosition, "Num commands", this._commands.length);
         this._raiseCaretChangedEvent();
     }
 }
