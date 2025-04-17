@@ -1,13 +1,23 @@
 import { camelCaseToReadable } from "ui-lib/Utils";
 import { Document } from "./Document";
 
-export abstract class Command {
-    private readonly guid: string = crypto.randomUUID();
+export type CommandBaseOptions = {
+    guid?: string;
+    selectionSet: string[];
+    version?: number;
+};
 
-    constructor(
-        public readonly name: string,
-        protected readonly _selectionSet: string[]
-    ) {}
+export abstract class Command {
+    private readonly _version: number = 1;
+    private readonly _guid: string = crypto.randomUUID();
+    protected readonly _selectionSet: string[];
+
+    constructor(options: CommandBaseOptions) {
+        this._guid = options.guid ?? crypto.randomUUID();
+        this._selectionSet = options.selectionSet ?? [];
+    }
+
+    public abstract get name(): string;
 
     public get displayName(): string {
         return camelCaseToReadable(this.name);
@@ -17,8 +27,8 @@ export abstract class Command {
         return this.displayName;
     }
 
-    public getGuid(): string {
-        return this.guid;
+    public get guid(): string {
+        return this._guid;
     }
 
     public clearSelection(): boolean {
@@ -27,4 +37,12 @@ export abstract class Command {
 
     public abstract do(document: Document): void;
     public abstract undo(document: Document): void;
+
+    public serialize(): any {
+        return {
+            version: this._version,
+            guid: this._guid,
+            selectionSet: this._selectionSet,
+        };
+    }
 }

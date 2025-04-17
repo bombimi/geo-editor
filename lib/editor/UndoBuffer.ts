@@ -1,3 +1,5 @@
+import { SavedCommand, createCommand, saveCommand } from "./CommandFactory";
+
 import { Command } from "./Command";
 import { EditorEvent } from "./EditorEvent";
 
@@ -16,12 +18,31 @@ export type UndoBufferChangedEventArgs = UndoBufferEventArgs & {
     caretPosition: number;
 };
 
+export type UndoBufferArgs = {
+    caretPosition: number;
+    commands: SavedCommand[];
+};
+
 export class UndoBuffer {
     public onCaretChanged = new EditorEvent<UndoBufferCaretChangedEventArgs>();
     public onChanged = new EditorEvent<UndoBufferChangedEventArgs>();
 
     private _commands: Command[] = [];
     private _caretPosition?: number;
+
+    constructor(args?: UndoBufferArgs) {
+        if (args) {
+            this._commands = args.commands.map((command) => createCommand(command));
+            this._caretPosition = args.caretPosition;
+        }
+    }
+
+    public serialize(): any {
+        return {
+            caretPosition: this._caretPosition,
+            commands: this._commands.map((command) => saveCommand(command)),
+        };
+    }
 
     public get caretPosition(): number | undefined {
         return this._caretPosition;

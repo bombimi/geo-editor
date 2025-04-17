@@ -25,6 +25,9 @@ export class DocumentHistory extends EditorElement {
     private _editorInit() {
         if (this._editor) {
             // Initialize the document history here
+            this._history = this._editor.undoBuffer.toArray();
+            this._caretPosition = this._editor.undoBuffer.caretPosition ?? 0;
+
             this._editor.undoBuffer.onChanged.add((args: UndoBufferChangedEventArgs) => {
                 this._history = args.undoBuffer.toArray();
                 this._caretPosition = args.caretPosition;

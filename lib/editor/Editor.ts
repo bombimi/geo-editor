@@ -1,9 +1,10 @@
-import { UndoBuffer } from "./UndoBuffer";
+import { UndoBuffer, UndoBufferArgs } from "./UndoBuffer";
+
 import { Command } from "./Command";
-import { SelectionSet } from "./SelectionSet";
-import { getGeoDocumentProviders } from "../geo/GeoDocumentProviders";
 import { Document } from "./Document";
+import { SelectionSet } from "./SelectionSet";
 import { editorManager } from "./EditorManager";
+import { getGeoDocumentProviders } from "../geo/GeoDocumentProviders";
 
 export class Editor {
     public readonly guid: string = crypto.randomUUID();
@@ -13,11 +14,14 @@ export class Editor {
     private _document: Document;
     private _selectionSet: SelectionSet = new SelectionSet();
 
-    constructor(document: Document) {
+    constructor(document: Document, undoBufferArgs?: UndoBufferArgs) {
         this._document = document;
+        if (undoBufferArgs) {
+            this._undoBuffer = new UndoBuffer(undoBufferArgs);
+        }
         editorManager.add(this);
         this._undoBuffer.onCaretChanged.add(() => {
-            this.document?.onChange.raise(this._document);
+            this.document?.onChanged.raise(this._document);
         });
     }
 

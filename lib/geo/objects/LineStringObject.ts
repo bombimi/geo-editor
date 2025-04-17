@@ -10,14 +10,18 @@ export class LineStringObject extends GeoObject {
         }
         super(feature);
         this.updateProperty(
-            new DocumentProperty("Num points", "number", this._getCoordinates().length, {
+            new DocumentProperty("__meta_num_points", this._getCoordinates().length, {
+                type: "number",
                 readonly: true,
+                displayName: "Number of Points",
             })
         );
         this.updateProperty(
-            new DocumentProperty("Length", "number", this.totalLength, {
+            new DocumentProperty("__meta_length", this.totalLength, {
+                type: "number",
                 readonly: true,
                 units: "meters",
+                displayName: "Length",
             })
         );
     }

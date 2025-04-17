@@ -8,7 +8,7 @@ export class GeoDocument extends Document {
     private _type?: string;
 
     constructor() {
-        super("geodoc", "root");
+        super("root");
     }
 
     public get geoJson(): GeoJson | null {
@@ -38,17 +38,19 @@ export class GeoDocument extends Document {
                 if (!feature.properties) {
                     feature.properties = {};
                 }
-                feature.properties.__guid = obj.guid;
+                feature.properties.__meta_guid = obj.guid;
             }
         }
 
         console.log("Opening GeoDocument", blob);
     }
 
-    public override async save(): Promise<Blob> {
+    public override async save(): Promise<string> {
         // Implement the logic to save the GeoDocument to a Blob
-        console.log("Saving GeoDocument");
-        return new Blob(); // Placeholder for actual Blob
+        return JSON.stringify({
+            type: "FeatureCollection",
+            features: this.children.map((child) => (child as GeoObject).feature),
+        });
     }
 
     public override get name(): string {

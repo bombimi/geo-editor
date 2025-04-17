@@ -1,4 +1,6 @@
-import { html, TemplateResult } from "lit";
+import "@shoelace-style/shoelace/dist/components/alert/alert.js";
+
+import { TemplateResult, html } from "lit";
 
 /**
  * Converts a camelCase string to a human-readable format.
@@ -42,4 +44,31 @@ export function createHtmlWithHexColors(text: string): TemplateResult {
         }
         return part;
     })}`;
+}
+
+// Always escape HTML for text arguments!
+function escapeHtml(html: string) {
+    const div = document.createElement("div");
+    div.textContent = html;
+    return div.innerHTML;
+}
+
+export function showToast(
+    message: string,
+    variant = "primary",
+    icon = "info-circle",
+    duration = 3000
+) {
+    const alert = Object.assign(document.createElement("sl-alert"), {
+        variant,
+        closable: true,
+        duration: duration,
+        innerHTML: `
+        <sl-icon name="${icon}" slot="icon"></sl-icon>
+        ${escapeHtml(message)}
+      `,
+    }) as any;
+
+    document.body.append(alert);
+    return alert.toast();
 }

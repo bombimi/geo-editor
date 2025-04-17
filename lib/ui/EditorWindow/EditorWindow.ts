@@ -18,12 +18,16 @@ import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
 import { Document } from "../../editor/Document";
 import { Editor } from "../../editor/Editor";
 import { DocumentProvider } from "../../editor/DocumentProvider";
-import { getGeoDocumentProviders } from "../../geo/GeoDocumentProviders";
+import {
+    GeoDocumentProviderGeoJson,
+    getGeoDocumentProviders,
+} from "../../geo/GeoDocumentProviders";
 
 import "../DocumentEditor";
 import "../DocumentHistory";
-import { UndoBufferEventArgs } from "editor/UndoBuffer";
+import { UndoBufferArgs, UndoBufferEventArgs } from "editor/UndoBuffer";
 import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
+import { showToast } from "ui-lib/Utils";
 
 @customElement("ds-editor-window")
 export class EditorWindow extends EditorElement {
@@ -89,16 +93,49 @@ export class EditorWindow extends EditorElement {
         super.firstUpdated(_changedProperties);
 
         // load the last document from local storage if it exists
-        const lastDoc = window.localStorage.getItem("lastDocument");
-        const lastDocName = window.localStorage.getItem("lastDocumentName");
-        const lastDocMimeType = window.localStorage.getItem("lastDocumentMimeType");
-        const lastDocProvider = window.localStorage.getItem("lastDocumentProvider");
-        if (lastDoc && lastDocName && lastDocMimeType && lastDocProvider) {
-            const provider = getGeoDocumentProviders().find((p) => p.id === lastDocProvider);
+        let lastDoc = window.localStorage.getItem("lastDocument");
+        let lastDocName = window.localStorage.getItem("lastDocumentName");
+        let lastDocMimeType = window.localStorage.getItem("lastDocumentMimeType");
+        let docProvider = window.localStorage.getItem("lastDocumentProvider");
+
+        // see if we have a current auto save
+        const lastAutoSave = window.localStorage.getItem("lastAutoSave");
+        const lastAutoSaveUndoBuffer = window.localStorage.getItem("lastAutoSaveUndoBuffer");
+
+        if (lastAutoSave) {
+            lastDoc = lastAutoSave;
+            lastDocMimeType = "application/json";
+            lastDocName = "autosave.json";
+            docProvider = new GeoDocumentProviderGeoJson().id;
+            showToast("Restoring from auto save");
+        }
+
+        let undoBufferArgs: UndoBufferArgs | undefined;
+        if (lastAutoSaveUndoBuffer) {
+            try {
+                undoBufferArgs = JSON.parse(lastAutoSaveUndoBuffer);
+            } catch (e) {
+                console.error("Error parsing undo buffer", e);
+            }
+        }
+
+        if (lastDoc && lastDocName && lastDocMimeType && docProvider) {
+            const provider = getGeoDocumentProviders().find((p) => p.id === docProvider);
             if (provider) {
                 const blob = new Blob([lastDoc], { type: lastDocMimeType });
-                this._openFile(provider, blob, lastDocName);
+                this._openFile(provider, blob, lastDocName, undoBufferArgs);
             }
+        }
+    }
+
+    private async _saveCurrentState() {
+        if (this._editor && this._document) {
+            const saved = await this._document.save();
+            window.localStorage.setItem("lastAutoSave", saved);
+            window.localStorage.setItem(
+                "lastAutoSaveUndoBuffer",
+                JSON.stringify(this._editor.undoBuffer.serialize())
+            );
         }
     }
 
@@ -113,17 +150,31 @@ export class EditorWindow extends EditorElement {
         this._hasRedo = args.canRedo;
     }
 
-    private async _openFile(provider: DocumentProvider, blob: Blob, name: string) {
+    private async _openFile(
+        provider: DocumentProvider,
+        blob: Blob,
+        name: string,
+        undoBufferArgs?: UndoBufferArgs
+    ) {
         this._document = await provider.openDocument(blob, name);
-        const editor = new Editor(this._document);
+        const editor = new Editor(this._document, undoBufferArgs);
         this.editorGuid = editor.guid;
+
+        this._document.onChanged.add(() => {
+            this._saveCurrentState();
+        });
+
+        this._hasUndo = editor.undoBuffer.canGoBack();
+        this._hasRedo = editor.undoBuffer.canGoForward();
 
         return this._document;
     }
 
     private _deleteSelectedObjects() {
         if (this._editor) {
-            this._editor.applyCommand(new DeleteObjectCommand(this._editor.selectionSet.toArray()));
+            this._editor.applyCommand(
+                new DeleteObjectCommand({ selectionSet: this._editor.selectionSet.toArray() })
+            );
         }
     }
     private _promptForFile(provider: DocumentProvider) {
@@ -140,12 +191,16 @@ export class EditorWindow extends EditorElement {
 
         input.addEventListener("change", async () => {
             if (input.files) {
-                if (await this._openFile(provider, input.files[0], input.files[0].name)) {
+                if (
+                    await this._openFile(provider, input.files[0], input.files[0].name, undefined)
+                ) {
                     const text = await input.files[0].text();
                     window.localStorage.setItem("lastDocument", text);
                     window.localStorage.setItem("lastDocumentProvider", provider.id);
                     window.localStorage.setItem("lastDocumentName", input.files[0].name);
                     window.localStorage.setItem("lastDocumentMimeType", input.files[0].type);
+                    window.localStorage.removeItem("lastAutoSave");
+                    window.localStorage.removeItem("lastAutoSaveUndoBuffer");
                 }
             }
             document.body.removeChild(input);

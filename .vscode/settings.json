@@ -12,6 +12,7 @@
         "mapboxgl",
         "uuidv"
     ],
+    "sort-imports.on-save": true,
     "restoreTerminals.terminals": [
         {
             "splitTerminals": [

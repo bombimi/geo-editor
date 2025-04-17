@@ -15,36 +15,56 @@ export type DocumentObjectChildEvent = {
 };
 
 export class DocumentObject {
-    public onChange = new EditorEvent<DocumentObject>();
-    public onDelete = new EditorEvent<DocumentObject>();
+    public readonly guid: string = uuidv4();
 
-    public onPropertyChange = new EditorEvent<DocumentPropertyEvent>();
+    public onChanged = new EditorEvent<DocumentObject>();
+    public onDeleted = new EditorEvent<DocumentObject>();
+
+    public onPropertyChanged = new EditorEvent<DocumentPropertyEvent>();
     public onPropertyAdded = new EditorEvent<DocumentPropertyEvent>();
     public onPropertyRemoved = new EditorEvent<DocumentPropertyEvent>();
 
     public onChildAdded = new EditorEvent<DocumentObjectChildEvent>();
     public onChildRemoved = new EditorEvent<DocumentObjectChildEvent>();
 
-    public readonly guid: string = uuidv4();
-
     private _children: DocumentObject[] = [];
     private _properties: DocumentProperty[] = [];
     private _selected = false;
 
-    private readonly _raiseOnChanged = () => this.onChange.raise(this);
-
-    constructor(name: string, type: DocumentObjectType, properties: DocumentProperty[] = []) {
-        this.updateProperty(new DocumentProperty("name", "string", name));
-        this.updateProperty(new DocumentProperty("type", "string", type, { readonly: true }));
-        this.updateProperty(
-            new DocumentProperty("__guid", "string", this.guid, { readonly: true })
-        );
+    constructor(type: DocumentObjectType, properties: DocumentProperty[] = []) {
+        const guid = properties.find((prop) => prop.name === "__meta_guid");
+        if (guid) {
+            this.guid = guid.value;
+        }
 
         for (const prop of properties) {
             this.updateProperty(prop);
         }
 
+        this.updateProperty(
+            new DocumentProperty("__meta_type", type, {
+                type: "string",
+                readonly: true,
+                displayName: "Type",
+            })
+        );
+        this.updateProperty(
+            new DocumentProperty("__meta_guid", this.guid, {
+                type: "string",
+                readonly: true,
+                displayName: "Unique Id",
+            })
+        );
+
         this._attachEvents(this);
+    }
+
+    public serialize(): any {
+        return {
+            guid: this.guid,
+            properties: this._properties.map((prop) => prop.serialize()),
+            children: this._children.map((child) => child.serialize()),
+        };
     }
 
     public addProperty(prop: DocumentProperty): void {
@@ -59,8 +79,9 @@ export class DocumentObject {
     public updateProperty(prop: DocumentProperty): void {
         const existingProp = this._findProperty(prop.name);
         if (existingProp) {
-            existingProp.value = prop.value;
-            this.onPropertyChange.raise({ property: existingProp, object: this });
+            this._properties = this._properties.filter((p) => p.name !== prop.name);
+            this._properties.push(prop.clone());
+            this.onPropertyChanged.raise({ property: existingProp, object: this });
         } else {
             // If not found, add the new property
             this.addProperty(prop);
@@ -80,7 +101,7 @@ export class DocumentObject {
     }
 
     public get type() {
-        return this._findProperty("type")?.value;
+        return this._findProperty("__meta_type")?.value;
     }
 
     public get displayType() {
@@ -133,11 +154,11 @@ export class DocumentObject {
 
     private _attachEvents(object: DocumentObject) {
         if (object !== this) {
-            object.onChange.add(this._raiseOnChanged);
+            object.onChanged.add(this._raiseOnChanged);
         }
-        object.onDelete.add(this._raiseOnChanged);
+        object.onDeleted.add(this._raiseOnChanged);
         object.onPropertyAdded.add(this._raiseOnChanged);
-        object.onPropertyChange.add(this._raiseOnChanged);
+        object.onPropertyChanged.add(this._raiseOnChanged);
         object.onPropertyRemoved.add(this._raiseOnChanged);
         object.onChildAdded.add(this._raiseOnChanged);
         object.onChildRemoved.add(this._raiseOnChanged);
@@ -145,11 +166,11 @@ export class DocumentObject {
 
     private _detachEvents(object: DocumentObject) {
         if (object !== this) {
-            object.onChange.remove(this._raiseOnChanged);
+            object.onChanged.remove(this._raiseOnChanged);
         }
-        object.onDelete.remove(this._raiseOnChanged);
+        object.onDeleted.remove(this._raiseOnChanged);
         object.onPropertyAdded.remove(this._raiseOnChanged);
-        object.onPropertyChange.remove(this._raiseOnChanged);
+        object.onPropertyChanged.remove(this._raiseOnChanged);
         object.onPropertyRemoved.remove(this._raiseOnChanged);
         object.onChildAdded.remove(this._raiseOnChanged);
         object.onChildRemoved.remove(this._raiseOnChanged);
@@ -158,4 +179,6 @@ export class DocumentObject {
     private _findProperty(name: string): DocumentProperty | undefined {
         return this._properties.find((property) => property.name === name);
     }
+
+    private readonly _raiseOnChanged = () => this.onChanged.raise(this);
 }

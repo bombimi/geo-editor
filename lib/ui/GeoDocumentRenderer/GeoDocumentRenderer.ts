@@ -46,7 +46,7 @@ export class GeoDocumentRenderer extends EditorElement {
 
     private _editorInit() {
         if (this._editor && this._map) {
-            this._editor.document?.onChange.add(() => {
+            this._editor.document?.onChanged.add(() => {
                 if (this._editor) {
                     this._setGeo();
                 }
@@ -90,7 +90,8 @@ export class GeoDocumentRenderer extends EditorElement {
                 @object-moved=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(
-                            new MoveObjectCommand(this._editor.selectionSet.toArray(), {
+                            new MoveObjectCommand({
+                                selectionSet: this._editor.selectionSet.toArray(),
                                 lon: e.detail.deltaLon,
                                 lat: e.detail.deltaLat,
                             })

@@ -20,7 +20,7 @@ export class PointObject extends GeoObject {
         } else {
             throw new Error("Geometry type is not Point.");
         }
-        this.onChange.raise(this);
+        this.onChanged.raise(this);
     }
 
     private _getCoordinates(): [number, number] {
@@ -32,7 +32,11 @@ export class PointObject extends GeoObject {
 
     private _setProperties(): void {
         const [lon, lat] = this._getCoordinates();
-        this.updateProperty(new DocumentProperty("Latitude", "string", lat, { readonly: true }));
-        this.updateProperty(new DocumentProperty("Longitude", "string", lon, { readonly: true }));
+        this.updateProperty(
+            new DocumentProperty("Latitude", lat, { type: "number", readonly: true })
+        );
+        this.updateProperty(
+            new DocumentProperty("Longitude", lon, { type: "number", readonly: true })
+        );
     }
 }

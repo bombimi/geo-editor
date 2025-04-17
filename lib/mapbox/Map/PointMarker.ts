@@ -3,23 +3,22 @@ import { MapMarker } from "../MapMarker";
 
 import "../MapMarker";
 
-export type ClickableMarkerEvent = {
-    marker: ClickableMarker;
+export type PointMarkerEvent = {
+    marker: PointMarker;
 };
 
-export type ClickableMarkerDragEndEvent = ClickableMarkerEvent & {
+export type PointMarkerDragEndEvent = PointMarkerEvent & {
     deltaLon: number;
     deltaLat: number;
     guid: string;
 };
 
-export type ClickableMarkerDragEndCallback = (e: ClickableMarkerDragEndEvent) => void;
+export type PointMarkerDragEndCallback = (e: PointMarkerDragEndEvent) => void;
+export type PointMarkerCallback = (e: PointMarkerEvent) => void;
 
-export type ClickableMarkerCallback = (e: ClickableMarkerEvent) => void;
-
-export class ClickableMarker extends Marker {
-    private _clickHandler?: ClickableMarkerCallback;
-    private _dragEndHandler?: ClickableMarkerDragEndCallback;
+export class PointMarker extends Marker {
+    private _clickHandler?: PointMarkerCallback;
+    private _dragEndHandler?: PointMarkerDragEndCallback;
 
     private _marker?: MapMarker;
     private _originalLngLat?: mapboxgl.LngLat;
@@ -73,12 +72,12 @@ export class ClickableMarker extends Marker {
         return this;
     }
 
-    public onClick(callback: ClickableMarkerCallback): this {
+    public onClick(callback: PointMarkerCallback): this {
         this._clickHandler = callback;
         return this;
     }
 
-    public onDragEnd(callback: ClickableMarkerDragEndCallback): this {
+    public onDragEnd(callback: PointMarkerDragEndCallback): this {
         this._dragEndHandler = callback;
         return this;
     }

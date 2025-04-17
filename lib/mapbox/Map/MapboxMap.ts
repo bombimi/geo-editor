@@ -9,28 +9,19 @@ import { merge } from "lodash-es";
 import { watch } from "../../ui-utils/watch";
 import { Location } from "../../geo/GeoJson";
 import { Feature, Geometry } from "geojson";
-import {
-    ClickableMarker,
-    ClickableMarkerDragEndEvent,
-    ClickableMarkerEvent,
-} from "./ClickableMarker";
+import { PointMarker, PointMarkerDragEndEvent, PointMarkerEvent } from "./PointMarker";
 import { BaseElement } from "../../ui-lib/BaseElement";
 import { uuidv4 } from "editor/Utils";
+import { MapLayers } from "./MapLayers";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
 
 export type MapConfigKeys = {
-    freetilehosting: string;
     mapbox: string;
 };
 
-export function timeout(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function defaultMapConfigKeys(): MapConfigKeys {
     return {
-        freetilehosting: "RCnhHPcnEt4bamnExBR1",
         mapbox: "pk.eyJ1IjoibWFydGluLXNsYXRlciIsImEiOiJjbTkzeHBqaTkwcW5sMmxxMW5oeTA2cjk2In0.VJ1BVbaN59wDTq6J0BLYIw",
     };
 }
@@ -60,7 +51,7 @@ export class MapboxMap extends BaseElement {
     private _config = this.config;
     private _pointFeatures: Feature[] = [];
     private _geoJsonLoaded = false;
-    private _markers: ClickableMarker[] = [];
+    private _markers: PointMarker[] = [];
     private _hoveredFeatureId: string | number | undefined;
     private _idToGuid = new Map<number, string>();
 
@@ -117,10 +108,9 @@ export class MapboxMap extends BaseElement {
         }
         if (this._geoJsonLoaded) {
             this._pointFeatures = [];
-            this._map.removeLayer("map-data-fill");
-            this._map.removeLayer("map-data-fill-outline");
-            this._map.removeLayer("map-data-line");
-            this._map.removeLayer("map-data-line-select");
+            for (const layer of MapLayers) {
+                this._map.removeLayer(layer.id);
+            }
             this._map.removeSource("map-data");
             for (const marker of this._markers) {
                 marker.remove();
@@ -134,7 +124,7 @@ export class MapboxMap extends BaseElement {
         let id = 0;
         for (const feature of filteredFeatures) {
             feature.id = id++;
-            this._idToGuid.set(feature.id, feature.properties?.__guid || uuidv4());
+            this._idToGuid.set(feature.id, feature.properties?.__meta_guid || uuidv4());
         }
 
         this._map.addSource("map-data", {
@@ -145,53 +135,9 @@ export class MapboxMap extends BaseElement {
             },
         });
 
-        const color = "#e8e8e8";
-        this._map.addLayer({
-            id: "map-data-fill",
-            type: "fill",
-            source: "map-data",
-            paint: {
-                "fill-color": ["coalesce", ["get", "fill"], color],
-                "fill-opacity": ["coalesce", ["get", "fill-opacity"], 0.3],
-            },
-            filter: ["==", ["geometry-type"], "Polygon"],
-        });
-
-        this._map.addLayer({
-            id: "map-data-fill-outline",
-            type: "line",
-            source: "map-data",
-            paint: {
-                "line-color": ["coalesce", ["get", "stroke"], color],
-                "line-width": ["coalesce", ["get", "stroke-width"], 2],
-                "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
-            },
-            filter: ["==", ["geometry-type"], "Polygon"],
-        });
-
-        this._map.addLayer({
-            id: "map-data-line",
-            type: "line",
-            source: "map-data",
-            paint: {
-                "line-color": ["coalesce", ["get", "stroke"], color],
-                "line-width": ["coalesce", ["get", "stroke-width"], 8],
-                "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
-            },
-            filter: ["==", ["geometry-type"], "LineString"],
-        });
-
-        this._map.addLayer({
-            id: "map-data-line-select",
-            type: "line",
-            source: "map-data",
-            paint: {
-                "line-color": "yellow",
-                "line-width": 8,
-                "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.8, 0],
-            },
-            filter: ["==", ["geometry-type"], "LineString"],
-        });
+        for (const layer of MapLayers) {
+            this._map.addLayer(layer);
+        }
 
         this._map?.on("mousemove", "map-data-line-select", (e: MapMouseEvent) => {
             if (this._map) {
@@ -241,7 +187,7 @@ export class MapboxMap extends BaseElement {
         this._geoJsonLoaded = true;
     }
 
-    private _handlePointGeometry(geometry: Geometry, properties: any, id: number) {
+    private _pushPointGeometry(geometry: Geometry, properties: any, id: number) {
         this._pointFeatures.push({
             type: "Feature",
             id,
@@ -255,14 +201,14 @@ export class MapboxMap extends BaseElement {
             return;
         }
 
-        const handleGeometry = (geometry: Geometry, properties: any, index: number) => {
+        const processPointGeometry = (geometry: Geometry, properties: any, index: number) => {
             if (geometry.type === "Point") {
-                this._handlePointGeometry(geometry, properties, index);
+                this._pushPointGeometry(geometry, properties, index);
             }
 
             if (geometry.type === "MultiPoint") {
                 geometry.coordinates.forEach((coordinatePair) => {
-                    this._handlePointGeometry(
+                    this._pushPointGeometry(
                         {
                             type: "Point",
                             coordinates: coordinatePair,
@@ -275,14 +221,14 @@ export class MapboxMap extends BaseElement {
 
             if (geometry.type === "GeometryCollection") {
                 geometry.geometries.forEach((geometry) => {
-                    handleGeometry(geometry, properties, index);
+                    processPointGeometry(geometry, properties, index);
                 });
             }
         };
 
         geojson.features.forEach((feature, i) => {
             const { geometry, properties } = feature;
-            handleGeometry(geometry, properties, i);
+            processPointGeometry(geometry, properties, i);
         });
 
         if (this._pointFeatures.length === 0) {
@@ -319,23 +265,23 @@ export class MapboxMap extends BaseElement {
             const symbolColor =
                 (point.properties && point.properties["symbol-color"]) || defaultSymbolColor;
 
-            const scale = 6;
-            // if (point.properties && point.properties["marker-size"]) {
-            //     if (point.properties["marker-size"] === "small") {
-            //         scale = 1.6;
-            //     }
+            let scale = 6;
+            if (point.properties && point.properties["marker-size"]) {
+                if (point.properties["marker-size"] === "small") {
+                    scale = 1.6;
+                }
 
-            //     if (point.properties["marker-size"] === "large") {
-            //         scale = 2.2;
-            //     }
-            // }
+                if (point.properties["marker-size"] === "large") {
+                    scale = 2.2;
+                }
+            }
 
             let symbol = "circle";
             if (point.properties && point.properties["marker-symbol"] !== undefined) {
                 symbol = point.properties["marker-symbol"];
             }
 
-            const marker = new ClickableMarker(
+            const marker = new PointMarker(
                 {
                     color,
                     scale,
@@ -343,13 +289,13 @@ export class MapboxMap extends BaseElement {
                     symbolColor,
                 } as MarkerOptions,
                 point.properties?.name || "",
-                point.properties?.__guid || ""
+                point.properties?.__meta_guid || ""
             )
                 .setLngLat((point.geometry as any).coordinates)
-                .onClick((e: ClickableMarkerEvent) => {
+                .onClick((e: PointMarkerEvent) => {
                     this._dispatchEvent("object-selected", e.marker.guid);
                 })
-                .onDragEnd((e: ClickableMarkerDragEndEvent) => {
+                .onDragEnd((e: PointMarkerDragEndEvent) => {
                     this._dispatchEvent("object-moved", {
                         object: e.guid,
                         deltaLon: e.deltaLon,
@@ -428,23 +374,6 @@ export class MapboxMap extends BaseElement {
         this.dispatchEvent(new CustomEvent("map-loaded", { bubbles: true, composed: true }));
 
         //   this._disableRightMouseDragRotate();
-    }
-
-    private _addLayer(layer: any) {
-        if (!this._map) {
-            return;
-        }
-
-        switch (layer.type) {
-            case "fill":
-            case "point":
-            case "line":
-            case "circle":
-            case "raster":
-            case "hillshade":
-                this._map.addLayer(layer);
-                break;
-        }
     }
 
     override firstUpdated() {

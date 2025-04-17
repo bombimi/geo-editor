@@ -1,5 +1,10 @@
-import { setBasePath } from "@shoelace-style/shoelace/dist/utilities/base-path.js";
+import { registerCommands } from "editor/Register";
+import { registerGeoDocumentObjects } from "geo/Register";
 import { registerIconLibrary } from "@shoelace-style/shoelace/dist/utilities/icon-library.js";
+import { setBasePath } from "@shoelace-style/shoelace/dist/utilities/base-path.js";
+
+registerGeoDocumentObjects();
+registerCommands();
 
 // Set the base path to lookup assets. In normal production for the app is uses a relative path
 // but this can be overridden so the website can also reference the same assets.

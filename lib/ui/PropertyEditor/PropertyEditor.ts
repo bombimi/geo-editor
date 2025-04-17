@@ -10,7 +10,6 @@ import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./PropertyEditor.style";
-import { SelectionSetChangedEvent } from "../../editor/SelectionSet";
 import { DocumentProperty } from "../../editor/DocumentProperty";
 import { DocumentObject } from "../../editor/DocumentObject";
 import { SetPropertyCommand } from "../../editor/commands/SetPropertyCommand";
@@ -25,7 +24,7 @@ export class PropertyEditor extends EditorElement {
 
     protected override _editorChanged(): void {
         super._editorChanged();
-        this._editor?.document.onChange.add(() => {
+        this._editor?.document.onChanged.add(() => {
             this._resetObjects();
         });
     }
@@ -54,9 +53,9 @@ export class PropertyEditor extends EditorElement {
     private _removeEvents() {
         // remove all events for existing objects
         this._currentObjects.forEach((obj) => {
-            obj.onChange.remove(this._resetProperties.bind(this));
-            obj.onDelete.remove(this._resetProperties.bind(this));
-            obj.onPropertyChange.remove(this._resetProperties.bind(this));
+            obj.onChanged.remove(this._resetProperties.bind(this));
+            obj.onDeleted.remove(this._resetProperties.bind(this));
+            obj.onPropertyChanged.remove(this._resetProperties.bind(this));
             obj.onPropertyAdded.remove(this._resetProperties.bind(this));
             obj.onPropertyRemoved.remove(this._resetProperties.bind(this));
         });
@@ -65,9 +64,9 @@ export class PropertyEditor extends EditorElement {
     private _addEvents() {
         // add all events for new objects
         this._currentObjects.forEach((obj) => {
-            obj.onChange.add(this._resetProperties.bind(this));
-            obj.onDelete.add(this._resetProperties.bind(this));
-            obj.onPropertyChange.add(this._resetProperties.bind(this));
+            obj.onChanged.add(this._resetProperties.bind(this));
+            obj.onDeleted.add(this._resetProperties.bind(this));
+            obj.onPropertyChanged.add(this._resetProperties.bind(this));
             obj.onPropertyAdded.add(this._resetProperties.bind(this));
             obj.onPropertyRemoved.add(this._resetProperties.bind(this));
         });
@@ -91,7 +90,13 @@ export class PropertyEditor extends EditorElement {
                 }
             }
         }
-        return [...commonProperties.values()];
+        // order by readonly first, then by displayName
+        const sortedProperties = [...commonProperties.values()].sort((a, b) => {
+            if (a.readonly && !b.readonly) return 1;
+            if (!a.readonly && b.readonly) return -1;
+            return a.displayName.localeCompare(b.displayName);
+        });
+        return [...sortedProperties.values()];
     }
 
     private _getPropertyInputType(property: DocumentProperty) {
@@ -107,7 +112,10 @@ export class PropertyEditor extends EditorElement {
         const newProp = property.clone();
         newProp.value = value;
         this._editor?.applyCommand(
-            new SetPropertyCommand(this._editor.selectionSet.toArray(), newProp)
+            new SetPropertyCommand({
+                selectionSet: this._editor.selectionSet.toArray(),
+                property: newProp,
+            })
         );
     }
 
@@ -144,7 +152,10 @@ export class PropertyEditor extends EditorElement {
                     newProp.value = e.target.value;
                 }
                 this._editor?.applyCommand(
-                    new SetPropertyCommand(this._editor.selectionSet.toArray(), newProp)
+                    new SetPropertyCommand({
+                        selectionSet: this._editor.selectionSet.toArray(),
+                        property: newProp,
+                    })
                 );
             }}
         >
@@ -183,7 +194,7 @@ export class PropertyEditor extends EditorElement {
                         ${this._mergedProperties.map(
                             (property) => html`
                                 <span class=${classMap({ readonly: property.readonly })}>
-                                    ${property.name}
+                                    ${property.displayName}
                                 </span>
                                 ${this._renderProperty(property)}
                             `
