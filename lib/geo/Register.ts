@@ -6,7 +6,7 @@ import { registerDocumentObject } from "editor/DocumentObjectFactory";
 
 export function registerGeoDocumentObjects(): void {
     registerDocumentObject("Point", (args) => new PointObject(args));
-    registerDocumentObject("Line", (args) => new LineStringObject(args));
+    registerDocumentObject("LineString", (args) => new LineStringObject(args));
 
     registerCommand("MoveObjectCommand", (args) => {
         return new MoveObjectCommand(args);

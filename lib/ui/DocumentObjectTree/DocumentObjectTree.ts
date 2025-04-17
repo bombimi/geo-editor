@@ -29,7 +29,6 @@ export class DocumentObjectTree extends EditorElement {
 
     @state() protected _document: Document | null = null;
     @state() protected _tree?: HTMLTemplateResult;
-
     private _selectionSet = new SelectionSet();
 
     @watch("_document")

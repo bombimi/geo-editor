@@ -1,5 +1,6 @@
 import { DocumentProperty } from "./DocumentProperty";
 import { EditorEvent } from "./EditorEvent";
+import { orderBy } from "lodash-es";
 import { uuidv4 } from "./Utils";
 
 export type DocumentObjectType = "root" | string;
@@ -131,6 +132,7 @@ export class DocumentObject {
 
     public addChild(child: DocumentObject): DocumentObject {
         this._children.push(child);
+        this._children = orderBy(this._children, ["type", "guid"], ["asc"]);
         this.onChildAdded.raise({ child, object: this });
         this._attachEvents(child);
         return child;
