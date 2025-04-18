@@ -38,7 +38,10 @@ export class SetPropertyCommand extends Command {
         for (const guid of this._selectionSet) {
             const feature = document.getChild(guid);
             if (feature) {
-                this._oldProps.set(guid, feature.getProperty(this._prop.name)?.clone());
+                const curProp = feature.getProperty(this._prop.name);
+                if (curProp) {
+                    this._oldProps.set(guid, curProp.clone());
+                }
                 feature.updateProperty(this._prop);
             }
         }
@@ -47,9 +50,14 @@ export class SetPropertyCommand extends Command {
         for (const guid of this._selectionSet) {
             const feature = document.getChild(guid);
             const oldProp = this._oldProps.get(guid);
-            if (feature && oldProp) {
-                // Restore the old property value
-                feature.updateProperty(oldProp);
+            if (feature) {
+                if (oldProp) {
+                    // Restore the old property value
+                    feature.updateProperty(oldProp);
+                } else {
+                    // If the old property is not found, remove the property from the feature
+                    feature.removeProperty(this._prop);
+                }
             }
         }
         this._oldProps.clear();

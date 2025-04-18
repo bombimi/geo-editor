@@ -31,6 +31,7 @@ export const MapLayers: any[] = [
             "line-color": ["coalesce", ["get", "stroke"], DEFAULT_LINE_COLOR],
             "line-width": ["coalesce", ["get", "stroke-width"], 8],
             "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
+            "line-dasharray": ["coalesce", ["get", "line-dasharray"], [1]],
         },
         filter: ["==", ["geometry-type"], "LineString"],
     },

@@ -2,7 +2,7 @@
     "tabWidth": 4,
     "useTabs": false,
     "printWidth": 100,
-    "plugins": ["prettier-plugin-go-template"],
+    "plugins": ["prettier-plugin-go-template", "prettier-plugin-organize-imports"],
     "trailingComma": "es5",
     "overrides": [
         {

@@ -1,6 +1,6 @@
+import { orderBy } from "lodash-es";
 import { DocumentProperty } from "./DocumentProperty";
 import { EditorEvent } from "./EditorEvent";
-import { orderBy } from "lodash-es";
 import { uuidv4 } from "./Utils";
 
 export type DocumentObjectType = "root" | string;
@@ -87,6 +87,11 @@ export class DocumentObject {
             // If not found, add the new property
             this.addProperty(prop);
         }
+    }
+
+    public removeProperty(prop: DocumentProperty): void {
+        this._properties = this._properties.filter((p) => p.name !== prop.name);
+        this.onPropertyRemoved.raise({ property: prop, object: this });
     }
 
     public get selected(): boolean {

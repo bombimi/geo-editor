@@ -82,6 +82,7 @@
         "npm-watch": "^0.13.0",
         "prettier": "^3.3.3",
         "prettier-plugin-go-template": "^0.0.15",
+        "prettier-plugin-organize-imports": "^4.1.0",
         "rollup": "^4.22.5",
         "rollup-plugin-copy": "^3.5.0",
         "rollup-plugin-delete": "^2.1.0",

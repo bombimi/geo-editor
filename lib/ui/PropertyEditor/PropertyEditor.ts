@@ -1,18 +1,58 @@
-import "@shoelace-style/shoelace/dist/components/input/input.js";
 import "@shoelace-style/shoelace/dist/components/color-picker/color-picker.js";
+import "@shoelace-style/shoelace/dist/components/dropdown/dropdown.js";
+import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
+import "@shoelace-style/shoelace/dist/components/input/input.js";
+import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
+import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 
-import { html } from "lit";
-import { classMap } from "lit/directives/class-map.js";
+import { html, TemplateResult } from "lit";
 import { choose } from "lit/directives/choose.js";
+import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
 import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
-import { styles } from "./PropertyEditor.style";
-import { DocumentProperty } from "../../editor/DocumentProperty";
+import { WellKnownPropertiesArray } from "geo/WellKnownProperties";
 import { DocumentObject } from "../../editor/DocumentObject";
+import { DocumentProperty, DocumentPropertyMetadata } from "../../editor/DocumentProperty";
 import { SetPropertyCommand } from "../../editor/commands/SetPropertyCommand";
+import { styles } from "./PropertyEditor.style";
+
+type TreeNode = {
+    group: string;
+    children: TreeNode[];
+    items: DocumentPropertyMetadata[];
+};
+
+function getPropertiesByGroup(props: DocumentProperty[], excluded: string[]): TreeNode {
+    const root: TreeNode = { group: "root", children: [], items: [] };
+
+    for (const prop of props) {
+        if (excluded.includes(prop.name)) {
+            continue;
+        }
+        let currentNode = root;
+
+        if (prop.metadata.group) {
+            const groups = prop.metadata.group.split(",").map((g) => g.trim());
+
+            for (const group of groups) {
+                let childNode = currentNode.children.find((child) => child.group === group);
+
+                if (!childNode) {
+                    childNode = { group, children: [], items: [] };
+                    currentNode.children.push(childNode);
+                }
+
+                currentNode = childNode;
+            }
+        }
+        currentNode.items.push(prop);
+    }
+
+    return root;
+}
 
 @customElement("ds-property-editor")
 export class PropertyEditor extends EditorElement {
@@ -21,6 +61,7 @@ export class PropertyEditor extends EditorElement {
     @state() protected _numSelectedItems = 0;
     @state() protected _mergedProperties: DocumentProperty[] = [];
     @state() protected _currentObjects: DocumentObject[] = [];
+    @state() protected _addPropertyDropdown?: TemplateResult;
 
     protected override _editorChanged(): void {
         super._editorChanged();
@@ -48,6 +89,7 @@ export class PropertyEditor extends EditorElement {
 
     private _resetProperties() {
         this._mergedProperties = this._mergeCommonProperties();
+        this._createAddDropdown();
     }
 
     private _removeEvents() {
@@ -103,6 +145,7 @@ export class PropertyEditor extends EditorElement {
         switch (property.type) {
             case "number":
                 return "number";
+
             default:
                 return "text";
         }
@@ -128,6 +171,17 @@ export class PropertyEditor extends EditorElement {
         }
     }
 
+    private _getInputPropertyValue(property: DocumentProperty) {
+        if (property.value === null) {
+            return "--";
+        }
+        if (property.type === "number-array") {
+            return property.value.join(", ");
+        }
+
+        return property.value;
+    }
+
     private _renderInputProperty(property: DocumentProperty) {
         return html` <sl-input
             .type=${this._getPropertyInputType(property)}
@@ -140,7 +194,7 @@ export class PropertyEditor extends EditorElement {
             pattern=${ifDefined(property.metadata.pattern)}
             size="small"
             clearable
-            value=${property.value !== null ? property.value : "—"}
+            value=${this._getInputPropertyValue(property)}
             @sl-input=${(e: any) => {
                 if (!e.target.validity.valid) {
                     return;
@@ -148,8 +202,16 @@ export class PropertyEditor extends EditorElement {
                 const newProp = property.clone();
                 if (property.type === "number") {
                     newProp.value = parseFloat(e.target.value);
-                } else {
-                    newProp.value = e.target.value;
+                } else if (property.type === "number-array") {
+                    let value = e.target.value.trim();
+                    value = value.replace(/\s+/g, "");
+
+                    const numbers = value.split(",").map((v: string) => parseFloat(v));
+                    if (numbers.some((n: number) => isNaN(n))) {
+                        return;
+                    }
+
+                    newProp.value = numbers;
                 }
                 this._editor?.applyCommand(
                     new SetPropertyCommand({
@@ -179,15 +241,64 @@ export class PropertyEditor extends EditorElement {
 
     private _renderProperty(property: DocumentProperty) {
         return choose(property.type, [
+            ["number-array", () => this._renderInputProperty(property)],
             ["number", () => this._renderInputProperty(property)],
             ["string", () => this._renderInputProperty(property)],
             ["color", () => this._renderColorProperty(property)],
         ]);
     }
 
+    private _addProperty(property: DocumentProperty) {
+        const newProp = property.clone();
+        this._editor?.applyCommand(
+            new SetPropertyCommand({
+                selectionSet: this._editor.selectionSet.toArray(),
+                property: newProp,
+            })
+        );
+    }
+
+    private _createAddDropdown() {
+        // exclude the properties that are already in the object
+        const excludedProperties = this._mergedProperties.map((p) => p.name);
+        const groupedProperties = getPropertiesByGroup(
+            WellKnownPropertiesArray,
+            excludedProperties
+        );
+        this._addPropertyDropdown = html` <sl-dropdown hoist>
+            <sl-icon-button slot="trigger" name="plus"></sl-icon-button>
+            <sl-menu> ${this._createAddDropdownAux(groupedProperties)} </sl-menu>
+        </sl-dropdown>`;
+    }
+
+    private _createAddDropdownAux(node: TreeNode): TemplateResult {
+        return html`${node.children.map(
+            (child) =>
+                html`<sl-menu-item>
+                    ${node.group === "root"
+                        ? html`${child.group}<sl-menu slot="submenu"
+                                  >${this._createAddDropdownAux(child)}</sl-menu
+                              >`
+                        : html`<sl-menu>${this._createAddDropdownAux(child)}</sl-menu>`}
+                </sl-menu-item>`
+        )}
+        ${node.items.map(
+            (item) =>
+                html`<sl-menu-item
+                    .value=${item.displayName!}
+                    @click=${() => this._addProperty(item)}
+                    >${item.displayName}</sl-menu-item
+                >`
+        )}`;
+    }
+
     override render() {
         return html`
             <div class="container">
+                <header class="header">
+                    <span>Properties</span>
+                    ${this._addPropertyDropdown}
+                </header>
                 <div class="main">
                     <!-- Main content goes here -->
                     <div class="two-column-grid">

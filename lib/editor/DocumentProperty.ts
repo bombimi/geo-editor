@@ -1,6 +1,6 @@
 import { cloneDeep } from "lodash-es";
 
-export type DocumentPropertyType = "color" | "string" | "number";
+export type DocumentPropertyType = "color" | "string" | "number" | "number-array";
 export type DocumentPropertyUnits = "meters";
 
 export type DocumentPropertyMetadata = {
@@ -12,6 +12,9 @@ export type DocumentPropertyMetadata = {
     step?: number; // Step value for the property (if applicable)
     pattern?: string; // Pattern for validating the property value (if applicable)
     displayName?: string; // Display name for the property (if applicable)
+    default?: any; // Default value for the property (if applicable)
+    options?: any[]; // Options for the property (if applicable)
+    group?: string; // Group for organizing properties (if applicable)
 };
 
 export class DocumentProperty {

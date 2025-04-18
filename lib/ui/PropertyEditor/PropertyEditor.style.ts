@@ -21,6 +21,16 @@ export const styles = css`
         padding: var(--ds-padding);
     }
 
+    .header {
+        flex-shrink: 0;
+        padding: 1rem;
+        color: var(--sl-color-neutral-700);
+        background-color: var(--sl-color-neutral-0);
+        flex-direction: row;
+        display: flex;
+        justify-content: space-between;
+    }
+
     .footer {
         flex-shrink: 0;
         background: #f1f1f1;

@@ -1,7 +1,7 @@
 import { Feature } from "geojson";
+import { camelCaseToReadable } from "ui-lib/Utils";
 import { DocumentObject, DocumentPropertyEvent } from "../editor/DocumentObject";
 import { DocumentProperty, DocumentPropertyMetadata } from "../editor/DocumentProperty";
-import { camelCaseToReadable } from "ui-lib/Utils";
 import { WellKnownProperties } from "./WellKnownProperties";
 
 function getPropertyMetadata(name: string): DocumentPropertyMetadata {
@@ -20,6 +20,7 @@ export abstract class GeoObject extends DocumentObject {
         }
 
         super(_feature.geometry.type, properties);
+
         this.onPropertyAdded.add((e: DocumentPropertyEvent) =>
             this._upsertProperty(e.property.name, e.property.value)
         );
