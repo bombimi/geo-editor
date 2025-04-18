@@ -42,7 +42,11 @@ export class SetPropertyCommand extends Command {
                 if (curProp) {
                     this._oldProps.set(guid, curProp.clone());
                 }
-                feature.updateProperty(this._prop);
+                if (this._prop.value !== undefined) {
+                    feature.updateProperty(this._prop);
+                } else {
+                    feature.removeProperty(this._prop);
+                }
             }
         }
     }

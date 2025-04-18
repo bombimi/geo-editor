@@ -1,12 +1,12 @@
 import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
+import resolve from "@rollup/plugin-node-resolve";
+import terser from "@rollup/plugin-terser";
+import typescript from "@rollup/plugin-typescript";
 import copy from "rollup-plugin-copy";
 import del from "rollup-plugin-delete";
 import injectProcessEnv from "rollup-plugin-inject-process-env";
-import json from "@rollup/plugin-json";
-import resolve from "@rollup/plugin-node-resolve";
 import summary from "rollup-plugin-summary";
-import terser from "@rollup/plugin-terser";
-import typescript from "@rollup/plugin-typescript";
 
 console.log(process.argv);
 
@@ -34,6 +34,7 @@ const SHOELACE_ICONS = [
     "grip-horizontal",
     "caret-right-fill",
     "info-circle",
+    "plus-lg",
 ];
 
 function getShoelaceIconTargets(destDir) {

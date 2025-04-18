@@ -31,6 +31,11 @@ export const styles = css`
         justify-content: space-between;
     }
 
+    .header-controls {
+        display: flex;
+        gap: 0.5rem;
+    }
+
     .footer {
         flex-shrink: 0;
         background: #f1f1f1;

@@ -15,26 +15,32 @@ import { EditorElement } from "../EditorElement";
 
 import { WellKnownPropertiesArray } from "geo/WellKnownProperties";
 import { DocumentObject } from "../../editor/DocumentObject";
-import { DocumentProperty, DocumentPropertyMetadata } from "../../editor/DocumentProperty";
+import { DocumentProperty } from "../../editor/DocumentProperty";
 import { SetPropertyCommand } from "../../editor/commands/SetPropertyCommand";
 import { styles } from "./PropertyEditor.style";
 
 type TreeNode = {
     group: string;
     children: TreeNode[];
-    items: DocumentPropertyMetadata[];
+    items: DocumentProperty[];
 };
 
-function getPropertiesByGroup(props: DocumentProperty[], excluded: string[]): TreeNode {
+function getPropertiesByGroup(
+    props: DocumentProperty[],
+    keep: (prop: DocumentProperty) => boolean = () => true
+): TreeNode {
     const root: TreeNode = { group: "root", children: [], items: [] };
 
     for (const prop of props) {
-        if (excluded.includes(prop.name)) {
+        if (!keep(prop)) {
             continue;
         }
         let currentNode = root;
 
         if (prop.metadata.group) {
+            if (prop.metadata.group === "Metadata") {
+                continue; // Skip metadata properties
+            }
             const groups = prop.metadata.group.split(",").map((g) => g.trim());
 
             for (const group of groups) {
@@ -62,6 +68,7 @@ export class PropertyEditor extends EditorElement {
     @state() protected _mergedProperties: DocumentProperty[] = [];
     @state() protected _currentObjects: DocumentObject[] = [];
     @state() protected _addPropertyDropdown?: TemplateResult;
+    @state() protected _removePropertyDropdown?: TemplateResult;
 
     protected override _editorChanged(): void {
         super._editorChanged();
@@ -89,7 +96,8 @@ export class PropertyEditor extends EditorElement {
 
     private _resetProperties() {
         this._mergedProperties = this._mergeCommonProperties();
-        this._createAddDropdown();
+        this._createAddPropertyDropdown();
+        this._createRemovePropertyDropdown();
     }
 
     private _removeEvents() {
@@ -258,35 +266,66 @@ export class PropertyEditor extends EditorElement {
         );
     }
 
-    private _createAddDropdown() {
-        // exclude the properties that are already in the object
-        const excludedProperties = this._mergedProperties.map((p) => p.name);
-        const groupedProperties = getPropertiesByGroup(
-            WellKnownPropertiesArray,
-            excludedProperties
+    private _removeProperty(property: DocumentProperty) {
+        const newProp = property.clone();
+        newProp.value = undefined;
+        this._editor?.applyCommand(
+            new SetPropertyCommand({
+                selectionSet: this._editor.selectionSet.toArray(),
+                property: newProp,
+            })
         );
-        this._addPropertyDropdown = html` <sl-dropdown hoist>
-            <sl-icon-button slot="trigger" name="plus"></sl-icon-button>
-            <sl-menu> ${this._createAddDropdownAux(groupedProperties)} </sl-menu>
+    }
+
+    private _createPropertyDropdown(
+        icon: string,
+        keep: (prop: DocumentProperty) => boolean,
+        click: (item: DocumentProperty) => void
+    ): TemplateResult {
+        // exclude the properties that are already in the object
+        const grouped = getPropertiesByGroup(WellKnownPropertiesArray, keep);
+        return html` <sl-dropdown hoist>
+            <sl-icon-button slot="trigger" name="${icon}"></sl-icon-button>
+            <sl-menu> ${this._createAddDropdownAux(grouped, click)} </sl-menu>
         </sl-dropdown>`;
     }
 
-    private _createAddDropdownAux(node: TreeNode): TemplateResult {
+    private _createRemovePropertyDropdown() {
+        const all = this._mergedProperties.map((p) => p.name);
+        this._removePropertyDropdown = this._createPropertyDropdown(
+            "dash-lg",
+            (p) => all.includes(p.name),
+            (item) => this._removeProperty(item)
+        );
+    }
+
+    private _createAddPropertyDropdown() {
+        // exclude the properties that are already in the object
+        const all = this._mergedProperties.map((p) => p.name);
+        this._addPropertyDropdown = this._createPropertyDropdown(
+            "plus-lg",
+            (p) => !all.includes(p.name),
+            (item) => this._addProperty(item)
+        );
+    }
+
+    private _createAddDropdownAux(
+        node: TreeNode,
+        click: (item: DocumentProperty) => void
+    ): TemplateResult {
         return html`${node.children.map(
             (child) =>
                 html`<sl-menu-item>
                     ${node.group === "root"
                         ? html`${child.group}<sl-menu slot="submenu"
-                                  >${this._createAddDropdownAux(child)}</sl-menu
+                                  >${this._createAddDropdownAux(child, click)}</sl-menu
                               >`
-                        : html`<sl-menu>${this._createAddDropdownAux(child)}</sl-menu>`}
+                        : html`<sl-menu>${this._createAddDropdownAux(child, click)}</sl-menu>`}
                 </sl-menu-item>`
         )}
         ${node.items.map(
             (item) =>
-                html`<sl-menu-item
-                    .value=${item.displayName!}
-                    @click=${() => this._addProperty(item)}
+                html`<sl-menu-item .value=${item.displayName!} @click=${() => click(item)}
                     >${item.displayName}</sl-menu-item
                 >`
         )}`;
@@ -297,7 +336,9 @@ export class PropertyEditor extends EditorElement {
             <div class="container">
                 <header class="header">
                     <span>Properties</span>
-                    ${this._addPropertyDropdown}
+                    <div class="header-controls">
+                        ${this._removePropertyDropdown}${this._addPropertyDropdown}
+                    </div>
                 </header>
                 <div class="main">
                     <!-- Main content goes here -->
