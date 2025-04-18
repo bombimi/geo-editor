@@ -1,10 +1,11 @@
-import { css } from "lit";
 import { Style } from "../Styles";
+import { css } from "lit";
 
 export const styles = css`
     ${Style}
     :host {
         display: block;
+        height: 100%;
     }
 
     .container {
@@ -13,6 +14,7 @@ export const styles = css`
         height: 100%;
         width: 100%;
         padding: var(--ds-padding);
+        overflow-y: auto;
     }
 
     .command {

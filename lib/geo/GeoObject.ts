@@ -31,6 +31,10 @@ export abstract class GeoObject extends DocumentObject {
         );
     }
 
+    public get isValid(): boolean {
+        return true;
+    }
+
     public override serialize() {
         return this._feature;
     }

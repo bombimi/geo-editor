@@ -14,7 +14,10 @@ export class GeoDocument extends Document {
     public get geoJson(): GeoJson | null {
         return new GeoJson({
             type: "FeatureCollection",
-            features: this.children.map((child) => (child as GeoObject).feature),
+            features: this.children
+                .map((child) => child as GeoObject)
+                .filter((child) => child.isValid)
+                .map((child) => child.feature),
         });
     }
 

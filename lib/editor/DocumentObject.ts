@@ -82,7 +82,7 @@ export class DocumentObject {
         if (existingProp) {
             this._properties = this._properties.filter((p) => p.name !== prop.name);
             this._properties.push(prop.clone());
-            this.onPropertyChanged.raise({ property: existingProp, object: this });
+            this.onPropertyChanged.raise({ property: prop, object: this });
         } else {
             // If not found, add the new property
             this.addProperty(prop);

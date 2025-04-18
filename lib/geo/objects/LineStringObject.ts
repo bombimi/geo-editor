@@ -26,6 +26,11 @@ export class LineStringObject extends GeoObject {
         );
     }
 
+    public override get isValid(): boolean {
+        const coords = this._getCoordinates();
+        return coords.length > 1;
+    }
+
     public override move(deltaLat: number, deltaLon: number): void {
         this._setCoordinates(
             this._getCoordinates().map(([lon, lat]) => [lon + deltaLon, lat + deltaLat])
