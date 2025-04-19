@@ -12,8 +12,6 @@ import mapboxgl, {
     MarkerOptions,
 } from "mapbox-gl";
 
-import MapboxDraw from "@mapbox/mapbox-gl-draw";
-
 import { Location } from "../../geo/GeoJson";
 import { BaseElement } from "../../ui-lib/BaseElement";
 import { watch } from "../../ui-utils/watch";
@@ -52,12 +50,21 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
     };
 }
 
+type InteractionModes =
+    | "select"
+    | "draw-point"
+    | "draw-line-string"
+    | "draw-polygon"
+    | "draw-circle"
+    | "draw-rectangle";
+
 @customElement("ds-map")
 export class MapboxMap extends BaseElement {
     static override styles = [styles];
 
     @property({ type: Object }) config: MapConfig = makeConfig();
     @property({ type: Array }) selectionSet: string[] = [];
+    @property({ type: String }) mode: InteractionModes = "select";
 
     public mapboxGL?: MapboxGLMap;
     private _config = this.config;
@@ -68,11 +75,20 @@ export class MapboxMap extends BaseElement {
     private _guidToId = new Map<string, number>();
     private _mapDraw?: MapboxDraw;
 
-    private _interactionMode?: InteractionMode = new SelectMode(this);
+    private _interactionMode?: InteractionMode;
 
     @state() protected _cssLoaded = false;
 
     @query("#map-container") protected _mapContainer?: HTMLElement;
+
+    @watch("mode")
+    _onModeChange() {
+        if (this._interactionMode) {
+            this._interactionMode.onDeactivate();
+        }
+        this._interactionMode = this._createMode(this.mode);
+        this._interactionMode.onActivate();
+    }
 
     @watch("config")
     _onConfigChange() {
@@ -142,6 +158,29 @@ export class MapboxMap extends BaseElement {
         }
     }
 
+    private _createMode(mode: InteractionModes): InteractionMode {
+        switch (mode) {
+            case "select":
+                return new SelectMode(this);
+            case "draw-point":
+                return new SelectMode(this);
+            case "draw-line-string":
+                return new SelectMode(this);
+            case "draw-polygon":
+                return new SelectMode(this);
+            case "draw-circle":
+                return new SelectMode(this);
+            case "draw-rectangle":
+                return new SelectMode(this);
+            default:
+                throw new Error(`Unknown mode: ${mode}`);
+        }
+    }
+
+    //---------------------------------------------------------------
+    // Map Event Handlers
+    //---------------------------------------------------------------
+
     private _onMouseLeave(event: MapMouseEvent) {
         if (this._interactionMode) {
             this._interactionMode.onMouseLeave(event);
@@ -153,6 +192,10 @@ export class MapboxMap extends BaseElement {
             this._interactionMode.onClick(e);
         }
     }
+
+    //---------------------------------------------------------------
+    // GeoJSON Layer
+    //---------------------------------------------------------------
 
     public setGeoJsonLayer2(geo: GeoJSON.FeatureCollection) {
         this._mapDraw?.add(geo);
@@ -391,15 +434,9 @@ export class MapboxMap extends BaseElement {
                 pitch: this._config.map.pitch,
             });
 
-            this._mapDraw = new MapboxDraw({
-                displayControlsDefault: false,
-            });
-            this.mapboxGL.addControl(this._mapDraw);
-            this.setMode("simple_select");
-
-            this.mapboxGL.on("draw.create", (e) => this._createFeature(e));
+            //this.mapboxGL.on("draw.create", (e) => this._createFeature(e));
             //this._map.on("draw.delete", this._delete);
-            this.mapboxGL.on("draw.update", (e) => this._updateFeature(e));
+            //this.mapboxGL.on("draw.update", (e) => this._updateFeature(e));
 
             this.mapboxGL.on("load", () => {
                 resolve();

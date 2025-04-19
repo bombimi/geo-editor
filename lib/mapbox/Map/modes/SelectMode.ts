@@ -24,6 +24,7 @@ export class SelectMode extends InteractionMode {
     }
 
     public override onClick(e: MapMouseEvent): void {
+        console.assert(this.isActive, "SelectMode is not active");
         if (this._map && e.features && e.features.length) {
             this._map.dispatchEvent(
                 createCustomEvent(
@@ -34,6 +35,8 @@ export class SelectMode extends InteractionMode {
         }
     }
     public override onMouseLeave(): void {
+        console.assert(this.isActive, "SelectMode is not active");
+
         if (this._map.mapboxGL) {
             if (this._hoveredFeatureId !== undefined) {
                 this._map.mapboxGL.setFeatureState(
@@ -56,6 +59,8 @@ export class SelectMode extends InteractionMode {
     }
 
     public override onMouseMove(e: MapMouseEvent): void {
+        console.assert(this.isActive, "SelectMode is not active");
+
         if (this._map.mapboxGL) {
             if (this._hoveredFeatureId) {
                 this._map.mapboxGL.setFeatureState(

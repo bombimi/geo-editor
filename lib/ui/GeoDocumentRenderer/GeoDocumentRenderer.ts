@@ -1,5 +1,5 @@
 import { html } from "lit";
-import { customElement, query, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./GeoDocumentRenderer.style";
@@ -16,17 +16,12 @@ import { StarsStyle } from "./Stars.style";
 export class GeoDocumentRenderer extends EditorElement {
     static override styles = [styles, StarsStyle];
 
+    @property({ type: String }) mode = "select";
     @state() private _selectionSet: string[] = [];
 
     private _bounds?: Bounds;
 
     @query("#map") protected _map?: MapboxMap;
-
-    public setMode(mode: string) {
-        if (this._map) {
-            this._map.setMode(mode);
-        }
-    }
 
     public zoomIn() {
         if (this._map) {
@@ -92,23 +87,27 @@ export class GeoDocumentRenderer extends EditorElement {
             <ds-map
                 id="map"
                 .selectionSet=${this._selectionSet}
+                .mode=${this.mode}
                 @map-loaded=${() => this._editorInit()}
                 @object-created=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(
                             new CreateFeatureCommand({
-                                selectionSet: this._editor.selectionSet.toArray(),
+                                selectionSet:
+                                    this._editor.selectionSet.toArray(),
                                 feature: e.detail,
                             })
                         );
                     }
                 }}
-                @object-selected=${(e: CustomEvent) => this._objectSelected(e.detail)}
+                @object-selected=${(e: CustomEvent) =>
+                    this._objectSelected(e.detail)}
                 @object-moved=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(
                             new MoveObjectCommand({
-                                selectionSet: this._editor.selectionSet.toArray(),
+                                selectionSet:
+                                    this._editor.selectionSet.toArray(),
                                 lon: e.detail.deltaLon,
                                 lat: e.detail.deltaLat,
                             })

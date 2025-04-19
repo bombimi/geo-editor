@@ -99,6 +99,10 @@ export const styles = css`
         background-color: var(--sl-color-neutral-0);
     }
 
+    sl-icon-button.active {
+        color: var(--sl-color-primary-500);
+    }
+
     .left-panels {
         position: absolute;
         display: flex;

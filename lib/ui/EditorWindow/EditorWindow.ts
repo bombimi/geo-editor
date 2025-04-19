@@ -9,7 +9,10 @@ import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
 import "@shoelace-style/shoelace/dist/components/tab/tab.js";
 
 import { html, PropertyValues } from "lit";
-import { customElement, query, state } from "lit/decorators.js";
+import { customElement, property, query, state } from "lit/decorators.js";
+import { classMap } from "lit/directives/class-map.js";
+import { ifDefined } from "lit/directives/if-defined.js";
+
 import { EditorElement } from "../EditorElement";
 
 import { styles } from "./EditorWindow.style";
@@ -29,9 +32,44 @@ import { showToast } from "ui-lib/Utils";
 import "../DocumentEditor";
 import "../DocumentHistory";
 
+const EditorWindowModes = [
+    {
+        icon: "cursor-fill",
+        iconset: "default",
+        mode: "select",
+    },
+    {
+        icon: "geo-alt",
+        iconset: "default",
+        mode: "draw-point",
+    },
+    {
+        icon: "line",
+        iconset: "app-icons",
+        mode: "draw-line-string",
+    },
+    {
+        icon: "polygon",
+        iconset: "app-icons",
+        mode: "draw-polygon",
+    },
+    {
+        icon: "rectangle",
+        iconset: "app-icons",
+        mode: "draw-rectangle",
+    },
+    {
+        icon: "circle",
+        iconset: "default",
+        mode: "draw-circle",
+    },
+];
+
 @customElement("ds-editor-window")
 export class EditorWindow extends EditorElement {
     static override styles = [styles];
+
+    @property({ type: String }) mode = "select";
 
     @state() protected _document: Document | null = null;
     @state() protected _hasUndo = false;
@@ -39,7 +77,8 @@ export class EditorWindow extends EditorElement {
     @state() protected _darkMode = true;
     @state() protected _deleteEnabled = false;
 
-    @query("ds-document-renderer") protected _documentRenderer?: GeoDocumentRenderer;
+    @query("ds-document-renderer")
+    protected _documentRenderer?: GeoDocumentRenderer;
 
     private _boundHandleKeyDown = this._handleKeyDown.bind(this);
 
@@ -77,8 +116,12 @@ export class EditorWindow extends EditorElement {
     protected override _editorChanged(): void {
         super._editorChanged();
         if (this._editor) {
-            this._editor.undoBuffer.onChanged.add(this._updateUndoRedo.bind(this));
-            this._editor.undoBuffer.onCaretChanged.add(this._updateUndoRedo.bind(this));
+            this._editor.undoBuffer.onChanged.add(
+                this._updateUndoRedo.bind(this)
+            );
+            this._editor.undoBuffer.onCaretChanged.add(
+                this._updateUndoRedo.bind(this)
+            );
         }
     }
 
@@ -99,12 +142,16 @@ export class EditorWindow extends EditorElement {
         // load the last document from local storage if it exists
         let lastDoc = window.localStorage.getItem("lastDocument");
         let lastDocName = window.localStorage.getItem("lastDocumentName");
-        let lastDocMimeType = window.localStorage.getItem("lastDocumentMimeType");
+        let lastDocMimeType = window.localStorage.getItem(
+            "lastDocumentMimeType"
+        );
         let docProvider = window.localStorage.getItem("lastDocumentProvider");
 
         // see if we have a current auto save
         const lastAutoSave = window.localStorage.getItem("lastAutoSave");
-        const lastAutoSaveUndoBuffer = window.localStorage.getItem("lastAutoSaveUndoBuffer");
+        const lastAutoSaveUndoBuffer = window.localStorage.getItem(
+            "lastAutoSaveUndoBuffer"
+        );
 
         if (lastAutoSave) {
             lastDoc = lastAutoSave;
@@ -124,7 +171,9 @@ export class EditorWindow extends EditorElement {
         }
 
         if (lastDoc && lastDocName && lastDocMimeType && docProvider) {
-            const provider = getGeoDocumentProviders().find((p) => p.id === docProvider);
+            const provider = getGeoDocumentProviders().find(
+                (p) => p.id === docProvider
+            );
             if (provider) {
                 const blob = new Blob([lastDoc], { type: lastDocMimeType });
                 this._openFile(provider, blob, lastDocName, undoBufferArgs);
@@ -145,7 +194,9 @@ export class EditorWindow extends EditorElement {
 
     private _toggleDarkMode() {
         this._darkMode = !this._darkMode;
-        document.getElementsByTagName("body")[0]?.classList.toggle("sl-theme-dark");
+        document
+            .getElementsByTagName("body")[0]
+            ?.classList.toggle("sl-theme-dark");
         this.requestUpdate();
     }
 
@@ -177,7 +228,9 @@ export class EditorWindow extends EditorElement {
     private _deleteSelectedObjects() {
         if (this._editor) {
             this._editor.applyCommand(
-                new DeleteObjectCommand({ selectionSet: this._editor.selectionSet.toArray() })
+                new DeleteObjectCommand({
+                    selectionSet: this._editor.selectionSet.toArray(),
+                })
             );
         }
     }
@@ -196,13 +249,27 @@ export class EditorWindow extends EditorElement {
         input.addEventListener("change", async () => {
             if (input.files) {
                 if (
-                    await this._openFile(provider, input.files[0], input.files[0].name, undefined)
+                    await this._openFile(
+                        provider,
+                        input.files[0],
+                        input.files[0].name,
+                        undefined
+                    )
                 ) {
                     const text = await input.files[0].text();
                     window.localStorage.setItem("lastDocument", text);
-                    window.localStorage.setItem("lastDocumentProvider", provider.id);
-                    window.localStorage.setItem("lastDocumentName", input.files[0].name);
-                    window.localStorage.setItem("lastDocumentMimeType", input.files[0].type);
+                    window.localStorage.setItem(
+                        "lastDocumentProvider",
+                        provider.id
+                    );
+                    window.localStorage.setItem(
+                        "lastDocumentName",
+                        input.files[0].name
+                    );
+                    window.localStorage.setItem(
+                        "lastDocumentMimeType",
+                        input.files[0].type
+                    );
                     window.localStorage.removeItem("lastAutoSave");
                     window.localStorage.removeItem("lastAutoSaveUndoBuffer");
                 }
@@ -216,20 +283,19 @@ export class EditorWindow extends EditorElement {
         input.click();
     }
 
-    private _setMode(mode: string) {
-        this._documentRenderer?.setMode(mode);
-    }
-
     override render() {
         return html`<div class="editor-window">
             ${this._document
                 ? html`<ds-document-renderer
+                      .mode=${this.mode}
                       .editorGuid=${this._editor?.guid}
                   ></ds-document-renderer>`
                 : html`<div class="no-document-container">
                       <div class="no-document-inner">
                           <span class="no-document-text">geoEditor</span>
-                          <a class="no-document-tagline" href="https://www.cavedb.net"
+                          <a
+                              class="no-document-tagline"
+                              href="https://www.cavedb.net"
                               >cavedb.net</a
                           >
                       </div>
@@ -237,20 +303,27 @@ export class EditorWindow extends EditorElement {
             <div class="top-left-controls">
                 <sl-button-group>
                     <sl-dropdown
-                        ><sl-button slot="trigger" size="large" caret>Open</sl-button>
+                        ><sl-button slot="trigger" size="large" caret
+                            >Open</sl-button
+                        >
                         <sl-menu>
                             ${getGeoDocumentProviders().map(
                                 (provider) =>
                                     html`<sl-menu-item
                                         value="open"
-                                        @click=${() => this._promptForFile(provider)}
+                                        @click=${() =>
+                                            this._promptForFile(provider)}
                                         >${provider.name}</sl-menu-item
                                     >`
                             )}
                         </sl-menu></sl-dropdown
                     >
-                    <sl-button size="large" ?disabled=${this._document === null}>Save</sl-button>
-                    <sl-button size="large" ?disabled=${this._document === null}>Export</sl-button>
+                    <sl-button size="large" ?disabled=${this._document === null}
+                        >Save</sl-button
+                    >
+                    <sl-button size="large" ?disabled=${this._document === null}
+                        >Export</sl-button
+                    >
                 </sl-button-group>
             </div>
             <div class="top-right-controls">
@@ -288,33 +361,25 @@ export class EditorWindow extends EditorElement {
                 <sl-button size="large">Sign in</sl-button>
             </div>
             <div class="side-right-controls">
-                <sl-icon-button name="cursor-fill"></sl-icon-button>
                 <sl-icon-button
                     name="trash3"
                     ?disabled=${!this._deleteEnabled}
                     @click=${() => this._deleteSelectedObjects()}
                 ></sl-icon-button>
                 <span></span>
-                <sl-icon-button
-                    name="geo-alt"
-                    @click=${() => this._setMode("draw_point")}
-                ></sl-icon-button>
-                <sl-icon-button
-                    library="app-icons"
-                    name="line"
-                    @click=${() => this._setMode("draw_line_string")}
-                ></sl-icon-button>
-                <sl-icon-button
-                    library="app-icons"
-                    name="polygon"
-                    @click=${() => this._setMode("draw_polygon")}
-                ></sl-icon-button>
-                <sl-icon-button
-                    library="app-icons"
-                    name="rectangle"
-                    @click=${() => this._setMode("draw_polygon")}
-                ></sl-icon-button>
-                <sl-icon-button name="circle"></sl-icon-button>
+                ${EditorWindowModes.map(
+                    (mode) =>
+                        html`<sl-icon-button
+                            class=${classMap({
+                                active: this.mode === mode.mode,
+                            })}
+                            name=${mode.icon}
+                            library=${ifDefined(mode.iconset)}
+                            @click=${() => {
+                                this.mode = mode.mode;
+                            }}
+                        ></sl-icon-button>`
+                )}
             </div>
             <div class="left-panels">
                 <sl-tab-group>
@@ -322,7 +387,9 @@ export class EditorWindow extends EditorElement {
                     <sl-tab slot="nav" panel="history">History</sl-tab>
 
                     <sl-tab-panel name="objects">
-                        <ds-document-editor .editorGuid=${this._editor?.guid}></ds-document-editor>
+                        <ds-document-editor
+                            .editorGuid=${this._editor?.guid}
+                        ></ds-document-editor>
                     </sl-tab-panel>
                     <sl-tab-panel name="history">
                         <ds-document-history
