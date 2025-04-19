@@ -23,9 +23,10 @@ export const styles = css`
 
     .header {
         flex-shrink: 0;
-        padding: 1rem;
-        color: var(--sl-color-neutral-700);
-        background-color: var(--sl-color-neutral-0);
+        padding: 0.5rem;
+        padding-left: 1rem;
+        color: var(--ds-panel-color);
+        background-color: var(--ds-panel-background-color);
         flex-direction: row;
         display: flex;
         justify-content: space-between;
@@ -41,8 +42,8 @@ export const styles = css`
         background: #f1f1f1;
         padding: 1rem;
         text-align: center;
-        color: var(--sl-color-neutral-700);
-        background-color: var(--sl-color-neutral-0);
+        color: var(--ds-panel-color);
+        background-color: var(--ds-panel-background-color);
     }
 
     .two-column-grid {

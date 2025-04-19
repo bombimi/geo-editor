@@ -7,6 +7,8 @@ export const Style = css`
         --ds-background-color: var(--sl-color-neutral-0);
         --ds-color: var(--sl-color-neutral-900);
         --ds-padding: 0.5rem;
+        --ds-panel-background-color: var(--sl-color-neutral-50);
+        --ds-panel-color: var(--sl-color-neutral-700);
     }
 
     html {

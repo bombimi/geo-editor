@@ -1,13 +1,13 @@
 import { Feature } from "geojson";
-import { GeoObject } from "../GeoObject";
 import { DocumentProperty } from "../../editor/DocumentProperty";
+import { GeoObject } from "../GeoObject";
 
 export class PointObject extends GeoObject {
-    public constructor(feature: Feature) {
+    public constructor(feature: Feature, guid?: string) {
         if (feature.geometry.type !== "Point") {
             throw new Error("Feature geometry must be of type Point.");
         }
-        super(feature);
+        super(feature, guid);
         this._setProperties();
     }
 

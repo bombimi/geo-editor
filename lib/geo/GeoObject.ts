@@ -9,7 +9,10 @@ function getPropertyMetadata(name: string): DocumentPropertyMetadata {
 }
 
 export abstract class GeoObject extends DocumentObject {
-    public constructor(protected _feature: Feature) {
+    public constructor(
+        protected _feature: Feature,
+        guid?: string
+    ) {
         const properties: DocumentProperty[] = [];
         if (_feature.properties) {
             for (const [key, value] of Object.entries(_feature.properties)) {
@@ -19,7 +22,7 @@ export abstract class GeoObject extends DocumentObject {
             _feature.properties = {};
         }
 
-        super(_feature.geometry.type, properties);
+        super(_feature.geometry.type, properties, guid);
 
         this.onPropertyAdded.add((e: DocumentPropertyEvent) =>
             this._upsertProperty(e.property.name, e.property.value)
@@ -32,8 +35,13 @@ export abstract class GeoObject extends DocumentObject {
         );
     }
 
+    public updateFeature(feature: Feature): void {
+        this._feature = feature;
+        this.onChanged.raise(this);
+    }
+
     public get isValid(): boolean {
-        return true;
+        return this._feature.geometry !== null;
     }
 
     public override serialize() {

@@ -1,21 +1,27 @@
 import { DocumentObject } from "../../editor/DocumentObject";
-import { PointObject } from "./PointObject";
 import { LineStringObject } from "./LineStringObject";
+import { PointObject } from "./PointObject";
+import { PolygonObject } from "./PolygonObject";
 
 export class Factory {
-    public static createPoint(feature: GeoJSON.Feature): PointObject {
-        return new PointObject(feature);
+    public static createPoint(feature: GeoJSON.Feature, guid?: string): PointObject {
+        return new PointObject(feature, guid);
     }
-    public static createLineString(feature: GeoJSON.Feature): LineStringObject {
-        return new LineStringObject(feature);
+    public static createLineString(feature: GeoJSON.Feature, guid?: string): LineStringObject {
+        return new LineStringObject(feature, guid);
+    }
+    public static createPolygon(feature: GeoJSON.Feature, guid?: string): PolygonObject {
+        return new PolygonObject(feature, guid);
     }
 
-    public static createFeature(feature: GeoJSON.Feature): DocumentObject {
+    public static createFeature(feature: GeoJSON.Feature, guid?: string): DocumentObject {
         switch (feature.geometry.type) {
             case "Point":
-                return this.createPoint(feature);
+                return this.createPoint(feature, guid);
             case "LineString":
-                return this.createLineString(feature);
+                return this.createLineString(feature, guid);
+            case "Polygon":
+                return this.createPolygon(feature, guid);
             default:
                 throw new Error(`Unsupported geometry type: ${feature.geometry.type}`);
         }

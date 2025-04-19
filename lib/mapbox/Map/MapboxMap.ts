@@ -3,16 +3,28 @@ import { customElement, property, query, state } from "lit/decorators.js";
 
 import { styles } from "./MapboxMap.style";
 
-import { Map as MapboxGLMap, MapMouseEvent, MarkerOptions } from "mapbox-gl";
-import mapboxgl from "mapbox-gl";
-import { merge } from "lodash-es";
-import { watch } from "../../ui-utils/watch";
-import { Location } from "../../geo/GeoJson";
-import { Feature, Geometry } from "geojson";
-import { PointMarker, PointMarkerDragEndEvent, PointMarkerEvent } from "./PointMarker";
-import { BaseElement } from "../../ui-lib/BaseElement";
 import { uuidv4 } from "editor/Utils";
+import { Feature, Geometry } from "geojson";
+import { merge } from "lodash-es";
+import mapboxgl, {
+    Map as MapboxGLMap,
+    MapMouseEvent,
+    MarkerOptions,
+} from "mapbox-gl";
+
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+
+import { Location } from "../../geo/GeoJson";
+import { BaseElement } from "../../ui-lib/BaseElement";
+import { watch } from "../../ui-utils/watch";
+import { InteractionMode } from "./InteractionMode";
 import { MapLayers } from "./MapLayers";
+import { SelectMode } from "./modes/SelectMode";
+import {
+    PointMarker,
+    PointMarkerDragEndEvent,
+    PointMarkerEvent,
+} from "./PointMarker";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
 
@@ -47,13 +59,16 @@ export class MapboxMap extends BaseElement {
     @property({ type: Object }) config: MapConfig = makeConfig();
     @property({ type: Array }) selectionSet: string[] = [];
 
-    private _map?: MapboxGLMap;
+    public mapboxGL?: MapboxGLMap;
     private _config = this.config;
     private _pointFeatures: Feature[] = [];
     private _geoJsonLoaded = false;
     private _markers: PointMarker[] = [];
-    private _hoveredFeatureId: string | number | undefined;
     private _idToGuid = new Map<number, string>();
+    private _guidToId = new Map<string, number>();
+    private _mapDraw?: MapboxDraw;
+
+    private _interactionMode?: InteractionMode = new SelectMode(this);
 
     @state() protected _cssLoaded = false;
 
@@ -76,118 +91,131 @@ export class MapboxMap extends BaseElement {
         for (const marker of this._markers) {
             marker.setSelected(this.selectionSet.includes(marker.guid));
         }
+        for (const [key, value] of this._guidToId.entries()) {
+            const selected = this.selectionSet.includes(key);
+            if (this.mapboxGL) {
+                this.mapboxGL.setFeatureState(
+                    { source: "map-data", id: value },
+                    { selected }
+                );
+            }
+        }
+    }
+
+    public featureGuidFromID(id: number): string | undefined {
+        return this._idToGuid.get(id);
+    }
+
+    public setMode(mode: string) {
+        if (this.mapboxGL) {
+            this._mapDraw?.changeMode(mode);
+        }
     }
 
     public zoomIn() {
-        if (this._map) {
-            this._map.zoomIn();
+        if (this.mapboxGL) {
+            this.mapboxGL.zoomIn();
         }
     }
 
     public zoomOut() {
-        if (this._map) {
-            this._map.zoomOut();
+        if (this.mapboxGL) {
+            this.mapboxGL.zoomOut();
         }
     }
 
     public fitBounds(ne: Location, sw: Location) {
-        if (this._map) {
+        if (this.mapboxGL) {
             const bb = new mapboxgl.LngLatBounds(
                 new mapboxgl.LngLat(sw.lon, sw.lat),
                 new mapboxgl.LngLat(ne.lon, ne.lat)
             );
-            this._map.fitBounds(bb, {
+            this.mapboxGL.fitBounds(bb, {
                 padding: 20,
             });
         }
     }
 
+    private _onMouseMove(e: MapMouseEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onMouseMove(e);
+        }
+    }
+
+    private _onMouseLeave(event: MapMouseEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onMouseLeave(event);
+        }
+    }
+
+    private _onClick(e: MapMouseEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onClick(e);
+        }
+    }
+
+    public setGeoJsonLayer2(geo: GeoJSON.FeatureCollection) {
+        this._mapDraw?.add(geo);
+    }
+
     public setGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
-        if (!this._map) {
+        if (!this.mapboxGL) {
             return;
         }
         if (this._geoJsonLoaded) {
             this._pointFeatures = [];
             for (const layer of MapLayers) {
-                this._map.removeLayer(layer.id);
+                this.mapboxGL.removeLayer(layer.id);
             }
-            this._map.removeSource("map-data");
+            this.mapboxGL.removeSource("map-data");
             for (const marker of this._markers) {
                 marker.remove();
             }
             this._markers = [];
             this._idToGuid.clear();
+            this._guidToId.clear();
             this._geoJsonLoaded = false;
         }
 
-        const filteredFeatures = geo.features.filter((feature) => feature.geometry !== null);
+        const features = geo.features;
         let id = 0;
-        for (const feature of filteredFeatures) {
+        for (const feature of features) {
             feature.id = id++;
-            this._idToGuid.set(feature.id, feature.properties?.__meta_guid || uuidv4());
+            const guid = feature.properties?.__meta_guid || uuidv4();
+            this._idToGuid.set(feature.id, guid);
+            this._guidToId.set(guid, feature.id);
         }
 
-        this._map.addSource("map-data", {
+        this.mapboxGL.addSource("map-data", {
             type: "geojson",
             data: {
                 type: "FeatureCollection",
-                features: filteredFeatures,
+                features: features,
             },
         });
 
         for (const layer of MapLayers) {
-            this._map.addLayer(layer);
+            this.mapboxGL.addLayer(layer);
+            this.mapboxGL?.on("mousemove", layer.id, (e: MapMouseEvent) =>
+                this._onMouseMove(e)
+            );
+            this.mapboxGL?.on("mouseleave", layer.id, (e: MapMouseEvent) =>
+                this._onMouseLeave(e)
+            );
+            this.mapboxGL?.on("click", layer.id, (e: MapMouseEvent) =>
+                this._onClick(e)
+            );
         }
 
-        this._map?.on("mousemove", "map-data-line-select", (e: MapMouseEvent) => {
-            if (this._map) {
-                if (this._hoveredFeatureId) {
-                    this._map.setFeatureState(
-                        { source: "map-data", id: this._hoveredFeatureId },
-                        { selected: false }
-                    );
-                    this._hoveredFeatureId = undefined;
-                }
-                if (e.features && e.features.length) {
-                    this._hoveredFeatureId = e.features[0].id;
-                    this._map.setFeatureState(
-                        { source: "map-data", id: this._hoveredFeatureId as number },
-                        { selected: true }
-                    );
-                    this._map.getCanvas().style.cursor = "pointer";
-                }
-                // // this._map.getCanvas().style.cursor = features && features.length ? "pointer" : "";
-            }
-        });
-
-        // When the mouse leaves the state-fill layer, update the feature state of the
-        // previously hovered feature.
-        this._map.on("mouseleave", "map-data-line-select", () => {
-            if (this._map) {
-                if (this._hoveredFeatureId !== undefined) {
-                    this._map.setFeatureState(
-                        { source: "map-data", id: this._hoveredFeatureId as number },
-                        { selected: false }
-                    );
-                }
-                this._hoveredFeatureId = undefined;
-                this._map.getCanvas().style.cursor = "";
-            }
-        });
-
-        this._map.on("click", "map-data-line-select", (e: MapMouseEvent) => {
-            if (this._map && e.features && e.features.length) {
-                this._dispatchEvent(
-                    "object-selected",
-                    this._idToGuid.get(e.features[0].id as number)
-                );
-            }
-        });
-        this._addMarkers(geo);
+        // this._addMarkers(geo);
         this._geoJsonLoaded = true;
     }
 
-    private _pushPointGeometry(geometry: Geometry, properties: any, id: number) {
+    private _pushPointGeometry(
+        geometry: Geometry,
+        properties: any,
+        id: number
+    ) {
         this._pointFeatures.push({
             type: "Feature",
             id,
@@ -197,11 +225,15 @@ export class MapboxMap extends BaseElement {
     }
 
     private _addMarkers(geojson: GeoJSON.FeatureCollection) {
-        if (!this._map) {
+        if (!this.mapboxGL) {
             return;
         }
 
-        const processPointGeometry = (geometry: Geometry, properties: any, index: number) => {
+        const processPointGeometry = (
+            geometry: Geometry,
+            properties: any,
+            index: number
+        ) => {
             if (geometry.type === "Point") {
                 this._pushPointGeometry(geometry, properties, index);
             }
@@ -261,9 +293,12 @@ export class MapboxMap extends BaseElement {
             }
 
             // If the Feature Object contains styling then use that, otherwise use our default feature color.
-            const color = (point.properties && point.properties["marker-color"]) || defaultColor;
+            const color =
+                (point.properties && point.properties["marker-color"]) ||
+                defaultColor;
             const symbolColor =
-                (point.properties && point.properties["symbol-color"]) || defaultSymbolColor;
+                (point.properties && point.properties["symbol-color"]) ||
+                defaultSymbolColor;
 
             let scale = 6;
             if (point.properties && point.properties["marker-size"]) {
@@ -277,7 +312,10 @@ export class MapboxMap extends BaseElement {
             }
 
             let symbol = "circle";
-            if (point.properties && point.properties["marker-symbol"] !== undefined) {
+            if (
+                point.properties &&
+                point.properties["marker-symbol"] !== undefined
+            ) {
                 symbol = point.properties["marker-symbol"];
             }
 
@@ -302,11 +340,13 @@ export class MapboxMap extends BaseElement {
                         deltaLat: e.deltaLat,
                     });
                 })
-                .addTo(this._map!);
+                .addTo(this.mapboxGL!);
 
             marker.setSelected(this.selectionSet.includes(marker.guid));
             marker.getElement().addEventListener("mouseover", () => {
-                marker.getElement().style.setProperty("cursor", "pointer", "important");
+                marker
+                    .getElement()
+                    .style.setProperty("cursor", "pointer", "important");
             });
 
             marker.getElement().addEventListener("touchstart", () => {});
@@ -322,11 +362,11 @@ export class MapboxMap extends BaseElement {
     private async _loadImage(name: string) {
         const url = `/map-icons/${name}.png`;
         return new Promise((resolve, reject) => {
-            this._map?.loadImage(url, (error, image) => {
+            this.mapboxGL?.loadImage(url, (error, image) => {
                 if (error) {
                     reject(error);
                 } else if (image) {
-                    this._map?.addImage(name, image);
+                    this.mapboxGL?.addImage(name, image);
                     resolve(image);
                 }
             });
@@ -339,18 +379,46 @@ export class MapboxMap extends BaseElement {
                 return;
             }
 
-            this._map = new MapboxGLMap({
+            this.mapboxGL = new MapboxGLMap({
                 container: this._mapContainer,
                 style: this._config.style,
                 projection: this._config.projection,
-                center: [this._config?.map.center[0], this._config?.map.center[1]],
+                center: [
+                    this._config?.map.center[0],
+                    this._config?.map.center[1],
+                ],
                 zoom: this._config.map.zoom,
                 pitch: this._config.map.pitch,
             });
-            this._map.on("load", () => {
+
+            this._mapDraw = new MapboxDraw({
+                displayControlsDefault: false,
+            });
+            this.mapboxGL.addControl(this._mapDraw);
+            this.setMode("simple_select");
+
+            this.mapboxGL.on("draw.create", (e) => this._createFeature(e));
+            //this._map.on("draw.delete", this._delete);
+            this.mapboxGL.on("draw.update", (e) => this._updateFeature(e));
+
+            this.mapboxGL.on("load", () => {
                 resolve();
             });
         });
+    }
+
+    private _createFeature(e: any) {
+        const features = e.features;
+        for (const feature of features) {
+            this._dispatchEvent("object-created", feature);
+        }
+    }
+
+    private _updateFeature(e: any) {
+        const features = e.features;
+        for (const feature of features) {
+            this._dispatchEvent("object-updated", feature);
+        }
     }
 
     private async _initMap() {
@@ -361,9 +429,9 @@ export class MapboxMap extends BaseElement {
         if (this._config.keys) {
             mapboxgl.accessToken = this._config.keys.mapbox;
         }
-        if (this._map) {
-            this._map.remove();
-            this._map = undefined;
+        if (this.mapboxGL) {
+            this.mapboxGL.remove();
+            this.mapboxGL = undefined;
         }
 
         await this._initMapbox();
@@ -371,7 +439,9 @@ export class MapboxMap extends BaseElement {
         const icons = ["point"];
         await Promise.all(icons.map((icon) => this._loadImage(icon)));
 
-        this.dispatchEvent(new CustomEvent("map-loaded", { bubbles: true, composed: true }));
+        this.dispatchEvent(
+            new CustomEvent("map-loaded", { bubbles: true, composed: true })
+        );
 
         //   this._disableRightMouseDragRotate();
     }

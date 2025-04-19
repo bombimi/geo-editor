@@ -1,12 +1,12 @@
 import "@shoelace-style/shoelace/dist/components/button-group/button-group.js";
 import "@shoelace-style/shoelace/dist/components/button/button.js";
-import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
 import "@shoelace-style/shoelace/dist/components/dropdown/dropdown.js";
-import "@shoelace-style/shoelace/dist/components/menu/menu.js";
+import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
+import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
-import "@shoelace-style/shoelace/dist/components/tab/tab.js";
 import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
+import "@shoelace-style/shoelace/dist/components/tab/tab.js";
 
 import { html, PropertyValues } from "lit";
 import { customElement, query, state } from "lit/decorators.js";
@@ -14,20 +14,20 @@ import { EditorElement } from "../EditorElement";
 
 import { styles } from "./EditorWindow.style";
 
-import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
 import { Document } from "../../editor/Document";
-import { Editor } from "../../editor/Editor";
 import { DocumentProvider } from "../../editor/DocumentProvider";
+import { Editor } from "../../editor/Editor";
 import {
     GeoDocumentProviderGeoJson,
     getGeoDocumentProviders,
 } from "../../geo/GeoDocumentProviders";
+import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
 
-import "../DocumentEditor";
-import "../DocumentHistory";
 import { UndoBufferArgs, UndoBufferEventArgs } from "editor/UndoBuffer";
 import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
 import { showToast } from "ui-lib/Utils";
+import "../DocumentEditor";
+import "../DocumentHistory";
 
 @customElement("ds-editor-window")
 export class EditorWindow extends EditorElement {
@@ -59,7 +59,11 @@ export class EditorWindow extends EditorElement {
                 if (this._hasRedo) {
                     this._editor?.redo();
                 }
+            } else if (event.key === "a") {
+                this._editor?.selectAll();
             }
+        } else if (event.key === "Escape" || event.key === "Esc") {
+            this._editor?.clearSelection();
         }
     }
 
@@ -212,6 +216,10 @@ export class EditorWindow extends EditorElement {
         input.click();
     }
 
+    private _setMode(mode: string) {
+        this._documentRenderer?.setMode(mode);
+    }
+
     override render() {
         return html`<div class="editor-window">
             ${this._document
@@ -280,17 +288,32 @@ export class EditorWindow extends EditorElement {
                 <sl-button size="large">Sign in</sl-button>
             </div>
             <div class="side-right-controls">
-                <sl-icon-button name="arrows-move"></sl-icon-button>
+                <sl-icon-button name="cursor-fill"></sl-icon-button>
                 <sl-icon-button
                     name="trash3"
                     ?disabled=${!this._deleteEnabled}
                     @click=${() => this._deleteSelectedObjects()}
                 ></sl-icon-button>
                 <span></span>
-                <sl-icon-button name="geo-alt"></sl-icon-button>
-                <sl-icon-button library="app-icons" name="line"></sl-icon-button>
-                <sl-icon-button library="app-icons" name="polygon"></sl-icon-button>
-                <sl-icon-button library="app-icons" name="rectangle"></sl-icon-button>
+                <sl-icon-button
+                    name="geo-alt"
+                    @click=${() => this._setMode("draw_point")}
+                ></sl-icon-button>
+                <sl-icon-button
+                    library="app-icons"
+                    name="line"
+                    @click=${() => this._setMode("draw_line_string")}
+                ></sl-icon-button>
+                <sl-icon-button
+                    library="app-icons"
+                    name="polygon"
+                    @click=${() => this._setMode("draw_polygon")}
+                ></sl-icon-button>
+                <sl-icon-button
+                    library="app-icons"
+                    name="rectangle"
+                    @click=${() => this._setMode("draw_polygon")}
+                ></sl-icon-button>
                 <sl-icon-button name="circle"></sl-icon-button>
             </div>
             <div class="left-panels">

@@ -35,6 +35,7 @@ const SHOELACE_ICONS = [
     "caret-right-fill",
     "info-circle",
     "plus-lg",
+    "cursor-fill",
 ];
 
 function getShoelaceIconTargets(destDir) {

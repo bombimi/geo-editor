@@ -75,10 +75,25 @@ export const WellKnownProperties: { [key: string]: DocumentPropertyMetadata } = 
         default: 0.6,
         group: "Fill style",
     },
+
+    // These are mapbox specific?
     "line-dasharray": {
         type: "number-array",
         displayName: "Line Dash Array",
         default: [1],
+        group: "Line style",
+    },
+    "line-color": {
+        type: "color",
+        pattern: hexColorRegex,
+        displayName: "Line Color",
+        default: "#555555",
+        group: "Line style",
+    },
+    "line-width": {
+        type: "number",
+        default: 2,
+        displayName: "Line Width",
         group: "Line style",
     },
 };

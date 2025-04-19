@@ -16,7 +16,7 @@ export type DocumentObjectChildEvent = {
 };
 
 export class DocumentObject {
-    public readonly guid: string = uuidv4();
+    public readonly guid: string;
 
     public onChanged = new EditorEvent<DocumentObject>();
     public onDeleted = new EditorEvent<DocumentObject>();
@@ -32,10 +32,11 @@ export class DocumentObject {
     private _properties: DocumentProperty[] = [];
     private _selected = false;
 
-    constructor(type: DocumentObjectType, properties: DocumentProperty[] = []) {
-        const guid = properties.find((prop) => prop.name === "__meta_guid");
-        if (guid) {
-            this.guid = guid.value;
+    constructor(type: DocumentObjectType, properties: DocumentProperty[] = [], guid?: string) {
+        this.guid = guid ?? uuidv4();
+        const guidProp = properties.find((prop) => prop.name === "__meta_guid");
+        if (guidProp) {
+            this.guid = guidProp.value;
         }
 
         for (const prop of properties) {

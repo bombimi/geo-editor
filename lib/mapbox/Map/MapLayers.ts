@@ -1,7 +1,41 @@
 const DEFAULT_FILL_COLOR = "#e8e8e8";
 const DEFAULT_LINE_COLOR = DEFAULT_FILL_COLOR;
+const DEFAULT_SELECTION_COLOR = "#FFFF00";
+const DEFAULT_FILL_OPACITY = 0.5;
 
 export const MapLayers: any[] = [
+    {
+        id: "map-data-fill-point",
+        type: "circle",
+        source: "map-data",
+        paint: {
+            "circle-color": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                DEFAULT_SELECTION_COLOR,
+                ["coalesce", ["get", "fill"], DEFAULT_FILL_COLOR],
+            ],
+            "circle-radius": 10,
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+    },
+    {
+        enabled: false,
+        id: "map-data-fill-point-select",
+        type: "circle",
+        source: "map-data",
+        paint: {
+            "circle-color": DEFAULT_SELECTION_COLOR,
+            "circle-radius": 10,
+            "circle-opacity": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                DEFAULT_FILL_OPACITY,
+                0,
+            ],
+        },
+        filter: ["==", ["geometry-type"], "Point"],
+    },
     {
         id: "map-data-fill",
         type: "fill",
@@ -9,6 +43,21 @@ export const MapLayers: any[] = [
         paint: {
             "fill-color": ["coalesce", ["get", "fill"], DEFAULT_FILL_COLOR],
             "fill-opacity": ["coalesce", ["get", "fill-opacity"], 0.3],
+        },
+        filter: ["==", ["geometry-type"], "Polygon"],
+    },
+    {
+        id: "map-data-fill-select",
+        type: "fill",
+        source: "map-data",
+        paint: {
+            "fill-color": DEFAULT_SELECTION_COLOR,
+            "fill-opacity": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                DEFAULT_FILL_OPACITY,
+                0,
+            ],
         },
         filter: ["==", ["geometry-type"], "Polygon"],
     },
@@ -42,7 +91,12 @@ export const MapLayers: any[] = [
         paint: {
             "line-color": "yellow",
             "line-width": 8,
-            "line-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 0.8, 0],
+            "line-opacity": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                DEFAULT_FILL_OPACITY,
+                0,
+            ],
         },
         filter: ["==", ["geometry-type"], "LineString"],
     },

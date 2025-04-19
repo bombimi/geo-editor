@@ -1,14 +1,14 @@
 import { DocumentProperty } from "editor/DocumentProperty";
-import { GeoObject } from "../GeoObject";
 import { GeoJson } from "geo/GeoJson";
 import { FeatureCollection } from "geojson";
+import { GeoObject } from "../GeoObject";
 
 export class LineStringObject extends GeoObject {
-    public constructor(feature: GeoJSON.Feature) {
+    public constructor(feature: GeoJSON.Feature, guid?: string) {
         if (feature.geometry.type !== "LineString") {
             throw new Error("Feature geometry must be of type LineString.");
         }
-        super(feature);
+        super(feature, guid);
         this.updateProperty(
             new DocumentProperty("__meta_num_points", this._getCoordinates().length, {
                 type: "number",
@@ -27,8 +27,7 @@ export class LineStringObject extends GeoObject {
     }
 
     public override get isValid(): boolean {
-        const coords = this._getCoordinates();
-        return coords.length > 1;
+        return super.isValid && this._getCoordinates().length > 1;
     }
 
     public override move(deltaLat: number, deltaLon: number): void {

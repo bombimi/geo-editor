@@ -2,6 +2,14 @@ import "@shoelace-style/shoelace/dist/components/alert/alert.js";
 
 import { TemplateResult, html } from "lit";
 
+export function createCustomEvent(name: string, details: any) {
+    return new CustomEvent(name, {
+        bubbles: true,
+        composed: true,
+        detail: details,
+    });
+}
+
 /**
  * Converts a camelCase string to a human-readable format.
  * Adds spaces between words and capitalizes the initial character.

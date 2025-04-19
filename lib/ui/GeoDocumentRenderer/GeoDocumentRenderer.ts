@@ -4,12 +4,13 @@ import { EditorElement } from "../EditorElement";
 
 import { styles } from "./GeoDocumentRenderer.style";
 
+import { CreateFeatureCommand } from "geo/commands/CreateFeatureCommand";
+import { GeoDocument } from "../../geo/GeoDocument";
+import { Bounds } from "../../geo/GeoJson";
+import { MoveObjectCommand } from "../../geo/commands/MoveObjectCommand";
 import "../../mapbox/Map/MapboxMap";
 import { MapboxMap } from "../../mapbox/Map/MapboxMap";
 import { StarsStyle } from "./Stars.style";
-import { GeoDocument } from "../../geo/GeoDocument";
-import { Bounds } from "../../geo/GeoJson";
-import { MoveObjectCommand } from "../../geo/modifiers/MoveObject";
 
 @customElement("ds-document-renderer")
 export class GeoDocumentRenderer extends EditorElement {
@@ -20,6 +21,12 @@ export class GeoDocumentRenderer extends EditorElement {
     private _bounds?: Bounds;
 
     @query("#map") protected _map?: MapboxMap;
+
+    public setMode(mode: string) {
+        if (this._map) {
+            this._map.setMode(mode);
+        }
+    }
 
     public zoomIn() {
         if (this._map) {
@@ -86,6 +93,16 @@ export class GeoDocumentRenderer extends EditorElement {
                 id="map"
                 .selectionSet=${this._selectionSet}
                 @map-loaded=${() => this._editorInit()}
+                @object-created=${(e: CustomEvent) => {
+                    if (this._editor) {
+                        this._editor.applyCommand(
+                            new CreateFeatureCommand({
+                                selectionSet: this._editor.selectionSet.toArray(),
+                                feature: e.detail,
+                            })
+                        );
+                    }
+                }}
                 @object-selected=${(e: CustomEvent) => this._objectSelected(e.detail)}
                 @object-moved=${(e: CustomEvent) => {
                     if (this._editor) {

@@ -1,10 +1,10 @@
 import { UndoBuffer, UndoBufferArgs } from "./UndoBuffer";
 
+import { getGeoDocumentProviders } from "../geo/GeoDocumentProviders";
 import { Command } from "./Command";
 import { Document } from "./Document";
-import { SelectionSet } from "./SelectionSet";
 import { editorManager } from "./EditorManager";
-import { getGeoDocumentProviders } from "../geo/GeoDocumentProviders";
+import { SelectionSet } from "./SelectionSet";
 
 export class Editor {
     public readonly guid: string = crypto.randomUUID();
@@ -43,6 +43,20 @@ export class Editor {
 
     get providers() {
         return this._providers;
+    }
+
+    public selectAll() {
+        if (this._document === null) {
+            throw new Error("No document loaded.");
+        }
+        this._selectionSet.set(this._document.children.map((c) => c.guid));
+    }
+
+    public clearSelection() {
+        if (this._document === null) {
+            throw new Error("No document loaded.");
+        }
+        this._selectionSet.clear();
     }
 
     public undo() {
