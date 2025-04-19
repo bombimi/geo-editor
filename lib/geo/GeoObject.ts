@@ -1,7 +1,13 @@
 import { Feature } from "geojson";
 import { camelCaseToReadable } from "ui-lib/Utils";
-import { DocumentObject, DocumentPropertyEvent } from "../editor/DocumentObject";
-import { DocumentProperty, DocumentPropertyMetadata } from "../editor/DocumentProperty";
+import {
+    DocumentObject,
+    DocumentPropertyEvent,
+} from "../editor/DocumentObject";
+import {
+    DocumentProperty,
+    DocumentPropertyMetadata,
+} from "../editor/DocumentProperty";
 import { WellKnownProperties } from "./WellKnownProperties";
 
 function getPropertyMetadata(name: string): DocumentPropertyMetadata {
@@ -13,16 +19,18 @@ export abstract class GeoObject extends DocumentObject {
         protected _feature: Feature,
         guid?: string
     ) {
+        super();
+
         const properties: DocumentProperty[] = [];
         if (_feature.properties) {
             for (const [key, value] of Object.entries(_feature.properties)) {
-                properties.push(new DocumentProperty(key, value, getPropertyMetadata(key)));
+                properties.push(
+                    new DocumentProperty(key, value, getPropertyMetadata(key))
+                );
             }
         } else {
             _feature.properties = {};
         }
-
-        super(_feature.geometry.type, properties, guid);
 
         this.onPropertyAdded.add((e: DocumentPropertyEvent) =>
             this._upsertProperty(e.property.name, e.property.value)
@@ -31,8 +39,11 @@ export abstract class GeoObject extends DocumentObject {
             this._upsertProperty(e.property.name, e.property.value)
         );
         this.onPropertyRemoved.add(
-            (e: DocumentPropertyEvent) => delete this._feature.properties![e.property.name]
+            (e: DocumentPropertyEvent) =>
+                delete this._feature.properties![e.property.name]
         );
+
+        super.init(_feature.geometry.type, properties, guid);
     }
 
     public updateFeature(feature: Feature): void {

@@ -5,6 +5,7 @@ export abstract class InteractionMode {
     public abstract name: string;
     public abstract displayName: string;
     public abstract description: string;
+    public readonly cursor: string = "";
 
     private _isActive = false;
 
@@ -16,6 +17,10 @@ export abstract class InteractionMode {
 
     public onActivate(): void {
         console.assert(!this._isActive, "InteractionMode is already active.");
+        if (this._map.mapboxGL) {
+            this._map.mapboxGL.getCanvas().style.cursor = this.cursor;
+        }
+
         this._isActive = true;
     }
     public onDeactivate(): void {

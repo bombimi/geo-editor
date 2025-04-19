@@ -8,6 +8,7 @@ export class SelectMode extends InteractionMode {
     public override displayName = "Select mode";
     public override name = "select";
     public override description = "Select objects on the map.";
+    public override cursor = "pointer";
 
     private _hoveredFeatureId: string | number | undefined;
 

@@ -9,7 +9,7 @@ import { GeoDocument } from "../../geo/GeoDocument";
 import { Bounds } from "../../geo/GeoJson";
 import { MoveObjectCommand } from "../../geo/commands/MoveObjectCommand";
 import "../../mapbox/Map/MapboxMap";
-import { MapboxMap } from "../../mapbox/Map/MapboxMap";
+import { InteractionModes, MapboxMap } from "../../mapbox/Map/MapboxMap";
 import { StarsStyle } from "./Stars.style";
 
 @customElement("ds-document-renderer")
@@ -87,14 +87,13 @@ export class GeoDocumentRenderer extends EditorElement {
             <ds-map
                 id="map"
                 .selectionSet=${this._selectionSet}
-                .mode=${this.mode}
+                .mode=${this.mode as unknown as InteractionModes}
                 @map-loaded=${() => this._editorInit()}
-                @object-created=${(e: CustomEvent) => {
+                @create-feature=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(
                             new CreateFeatureCommand({
-                                selectionSet:
-                                    this._editor.selectionSet.toArray(),
+                                selectionSet: [],
                                 feature: e.detail,
                             })
                         );

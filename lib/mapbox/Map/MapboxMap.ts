@@ -7,6 +7,7 @@ import { uuidv4 } from "editor/Utils";
 import { Feature, Geometry } from "geojson";
 import { merge } from "lodash-es";
 import mapboxgl, {
+    GeoJSONSource,
     Map as MapboxGLMap,
     MapMouseEvent,
     MarkerOptions,
@@ -17,6 +18,7 @@ import { BaseElement } from "../../ui-lib/BaseElement";
 import { watch } from "../../ui-utils/watch";
 import { InteractionMode } from "./InteractionMode";
 import { MapLayers } from "./MapLayers";
+import { CreatePointMode } from "./modes/CreatePointMode";
 import { SelectMode } from "./modes/SelectMode";
 import {
     PointMarker,
@@ -50,7 +52,7 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
     };
 }
 
-type InteractionModes =
+export type InteractionModes =
     | "select"
     | "draw-point"
     | "draw-line-string"
@@ -71,9 +73,14 @@ export class MapboxMap extends BaseElement {
     private _pointFeatures: Feature[] = [];
     private _geoJsonLoaded = false;
     private _markers: PointMarker[] = [];
+
+    // The setFeatureState API requires a unique ID for each feature and that
+    // appears to be a number. So we need to keep track of the mapping between
+    // the GUID and the ID. The ID is used to set the feature state and the GUID
+    // is used to identify the feature in the selection set.
+    private _currentFeatureID = 0;
     private _idToGuid = new Map<number, string>();
     private _guidToId = new Map<string, number>();
-    private _mapDraw?: MapboxDraw;
 
     private _interactionMode?: InteractionMode;
 
@@ -122,12 +129,6 @@ export class MapboxMap extends BaseElement {
         return this._idToGuid.get(id);
     }
 
-    public setMode(mode: string) {
-        if (this.mapboxGL) {
-            this._mapDraw?.changeMode(mode);
-        }
-    }
-
     public zoomIn() {
         if (this.mapboxGL) {
             this.mapboxGL.zoomIn();
@@ -163,7 +164,7 @@ export class MapboxMap extends BaseElement {
             case "select":
                 return new SelectMode(this);
             case "draw-point":
-                return new SelectMode(this);
+                return new CreatePointMode(this);
             case "draw-line-string":
                 return new SelectMode(this);
             case "draw-polygon":
@@ -197,36 +198,37 @@ export class MapboxMap extends BaseElement {
     // GeoJSON Layer
     //---------------------------------------------------------------
 
-    public setGeoJsonLayer2(geo: GeoJSON.FeatureCollection) {
-        this._mapDraw?.add(geo);
+    private _updateGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
+        if (this.mapboxGL) {
+            (this.mapboxGL.getSource("map-data") as GeoJSONSource)?.setData(
+                geo
+            );
+        }
     }
 
     public setGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
         if (!this.mapboxGL) {
             return;
         }
-        if (this._geoJsonLoaded) {
-            this._pointFeatures = [];
-            for (const layer of MapLayers) {
-                this.mapboxGL.removeLayer(layer.id);
-            }
-            this.mapboxGL.removeSource("map-data");
-            for (const marker of this._markers) {
-                marker.remove();
-            }
-            this._markers = [];
-            this._idToGuid.clear();
-            this._guidToId.clear();
-            this._geoJsonLoaded = false;
-        }
 
         const features = geo.features;
-        let id = 0;
+
+        // add feature to id mapping for new objects
         for (const feature of features) {
-            feature.id = id++;
-            const guid = feature.properties?.__meta_guid || uuidv4();
-            this._idToGuid.set(feature.id, guid);
-            this._guidToId.set(guid, feature.id);
+            const guid = feature.properties?.__meta_guid;
+            console.assert(guid !== undefined, "Feature does not have a guid");
+            if (!this._guidToId.has(feature.properties?.__meta_guid)) {
+                const guid = feature.properties?.__meta_guid || uuidv4();
+                feature.id = this._currentFeatureID++;
+                this._idToGuid.set(feature.id, guid);
+                this._guidToId.set(guid, feature.id);
+            }
+        }
+
+        // just update the existing layer and avoid the full redraw if we are initialized
+        if (this._geoJsonLoaded) {
+            this._updateGeoJsonLayer(geo);
+            return;
         }
 
         this.mapboxGL.addSource("map-data", {
@@ -438,6 +440,11 @@ export class MapboxMap extends BaseElement {
             //this._map.on("draw.delete", this._delete);
             //this.mapboxGL.on("draw.update", (e) => this._updateFeature(e));
 
+            this.mapboxGL.on("click", (e: MapMouseEvent) => {
+                if (this._interactionMode) {
+                    this._interactionMode.onClick(e);
+                }
+            });
             this.mapboxGL.on("load", () => {
                 resolve();
             });

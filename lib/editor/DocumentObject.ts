@@ -16,7 +16,7 @@ export type DocumentObjectChildEvent = {
 };
 
 export class DocumentObject {
-    public readonly guid: string;
+    public guid!: string;
 
     public onChanged = new EditorEvent<DocumentObject>();
     public onDeleted = new EditorEvent<DocumentObject>();
@@ -32,7 +32,11 @@ export class DocumentObject {
     private _properties: DocumentProperty[] = [];
     private _selected = false;
 
-    constructor(type: DocumentObjectType, properties: DocumentProperty[] = [], guid?: string) {
+    public init(
+        type: DocumentObjectType,
+        properties: DocumentProperty[] = [],
+        guid?: string
+    ) {
         this.guid = guid ?? uuidv4();
         const guidProp = properties.find((prop) => prop.name === "__meta_guid");
         if (guidProp) {
@@ -81,7 +85,9 @@ export class DocumentObject {
     public updateProperty(prop: DocumentProperty): void {
         const existingProp = this._findProperty(prop.name);
         if (existingProp) {
-            this._properties = this._properties.filter((p) => p.name !== prop.name);
+            this._properties = this._properties.filter(
+                (p) => p.name !== prop.name
+            );
             this._properties.push(prop.clone());
             this.onPropertyChanged.raise({ property: prop, object: this });
         } else {

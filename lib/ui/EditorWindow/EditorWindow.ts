@@ -103,6 +103,7 @@ export class EditorWindow extends EditorElement {
             }
         } else if (event.key === "Escape" || event.key === "Esc") {
             this._editor?.clearSelection();
+            this.mode = "select";
         }
     }
 
