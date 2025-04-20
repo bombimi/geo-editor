@@ -1,5 +1,6 @@
 import { MapMouseEvent } from "mapbox-gl";
 import { createCustomEvent } from "ui-lib/Utils";
+import { GeoJsonSource } from "../GeoJsonSource";
 import { InteractionMode } from "../InteractionMode";
 import { MapboxMap } from "../MapboxMap";
 
@@ -9,8 +10,8 @@ export class CreatePointMode extends InteractionMode {
     public override description = "Create a point on the map.";
     public override cursor = "crosshair";
 
-    constructor(map: MapboxMap) {
-        super(map);
+    constructor(map: MapboxMap, geoSource: GeoJsonSource) {
+        super(map, geoSource);
     }
 
     public override onClick(e: MapMouseEvent): void {

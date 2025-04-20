@@ -23,6 +23,12 @@ export class GeoDocumentRenderer extends EditorElement {
 
     @query("#map") protected _map?: MapboxMap;
 
+    public onKeyDown(event: KeyboardEvent) {
+        if (this._map) {
+            return this._map.onKeyDown(event);
+        }
+        return false;
+    }
     public zoomIn() {
         if (this._map) {
             this._map.zoomIn();

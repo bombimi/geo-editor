@@ -3,9 +3,9 @@ const DEFAULT_LINE_COLOR = DEFAULT_FILL_COLOR;
 const DEFAULT_SELECTION_COLOR = "#FFFF00";
 const DEFAULT_FILL_OPACITY = 0.5;
 
-export const MapLayers: any[] = [
+const MapLayers: any[] = [
     {
-        id: "map-data-fill-point",
+        id: "fill-point",
         type: "circle",
         source: "map-data",
         paint: {
@@ -15,13 +15,13 @@ export const MapLayers: any[] = [
                 DEFAULT_SELECTION_COLOR,
                 ["coalesce", ["get", "fill"], DEFAULT_FILL_COLOR],
             ],
-            "circle-radius": 10,
+            "circle-radius": ["coalesce", ["get", "circle-radius"], 10],
         },
         filter: ["==", ["geometry-type"], "Point"],
     },
     {
         enabled: false,
-        id: "map-data-fill-point-select",
+        id: "fill-point-select",
         type: "circle",
         source: "map-data",
         paint: {
@@ -37,7 +37,7 @@ export const MapLayers: any[] = [
         filter: ["==", ["geometry-type"], "Point"],
     },
     {
-        id: "map-data-fill",
+        id: "fill",
         type: "fill",
         source: "map-data",
         paint: {
@@ -47,7 +47,7 @@ export const MapLayers: any[] = [
         filter: ["==", ["geometry-type"], "Polygon"],
     },
     {
-        id: "map-data-fill-select",
+        id: "fill-select",
         type: "fill",
         source: "map-data",
         paint: {
@@ -62,7 +62,7 @@ export const MapLayers: any[] = [
         filter: ["==", ["geometry-type"], "Polygon"],
     },
     {
-        id: "map-data-fill-outline",
+        id: "fill-outline",
         type: "line",
         source: "map-data",
         paint: {
@@ -73,7 +73,7 @@ export const MapLayers: any[] = [
         filter: ["==", ["geometry-type"], "Polygon"],
     },
     {
-        id: "map-data-line",
+        id: "line",
         type: "line",
         source: "map-data",
         paint: {
@@ -85,7 +85,7 @@ export const MapLayers: any[] = [
         filter: ["==", ["geometry-type"], "LineString"],
     },
     {
-        id: "map-data-line-select",
+        id: "line-select",
         type: "line",
         source: "map-data",
         paint: {
@@ -101,3 +101,13 @@ export const MapLayers: any[] = [
         filter: ["==", ["geometry-type"], "LineString"],
     },
 ];
+
+export function getMapLayers(source: string): any[] {
+    return MapLayers.map((layer) => {
+        return {
+            ...layer,
+            id: `${source}-${layer.id}`,
+            source,
+        };
+    });
+}

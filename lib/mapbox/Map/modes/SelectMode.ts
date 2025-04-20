@@ -2,6 +2,7 @@ import { InteractionMode } from "../InteractionMode";
 
 import { MapMouseEvent } from "mapbox-gl";
 import { createCustomEvent } from "ui-lib/Utils";
+import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
 
 export class SelectMode extends InteractionMode {
@@ -12,8 +13,8 @@ export class SelectMode extends InteractionMode {
 
     private _hoveredFeatureId: string | number | undefined;
 
-    constructor(map: MapboxMap) {
-        super(map);
+    constructor(map: MapboxMap, geoSource: GeoJsonSource) {
+        super(map, geoSource);
     }
 
     public override onActivate(): void {
@@ -30,7 +31,9 @@ export class SelectMode extends InteractionMode {
             this._map.dispatchEvent(
                 createCustomEvent(
                     "object-selected",
-                    this._map.featureGuidFromID(e.features[0].id as number)
+                    this._geoSource.featureGuidFromId(
+                        e.features[0].id as number
+                    )
                 )
             );
         }
@@ -47,7 +50,7 @@ export class SelectMode extends InteractionMode {
                     },
                     {
                         selected: this._map.selectionSet.includes(
-                            this._map.featureGuidFromID(
+                            this._geoSource.featureGuidFromId(
                                 this._hoveredFeatureId as number
                             )!
                         ),

@@ -1,5 +1,6 @@
 import "@shoelace-style/shoelace/dist/components/button-group/button-group.js";
 import "@shoelace-style/shoelace/dist/components/button/button.js";
+import "@shoelace-style/shoelace/dist/components/divider/divider.js";
 import "@shoelace-style/shoelace/dist/components/dropdown/dropdown.js";
 import "@shoelace-style/shoelace/dist/components/icon-button/icon-button.js";
 import "@shoelace-style/shoelace/dist/components/menu-item/menu-item.js";
@@ -7,6 +8,7 @@ import "@shoelace-style/shoelace/dist/components/menu/menu.js";
 import "@shoelace-style/shoelace/dist/components/tab-group/tab-group.js";
 import "@shoelace-style/shoelace/dist/components/tab-panel/tab-panel.js";
 import "@shoelace-style/shoelace/dist/components/tab/tab.js";
+import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
 
 import { html, PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
@@ -37,31 +39,57 @@ const EditorWindowModes = [
         icon: "cursor-fill",
         iconset: "default",
         mode: "select",
+        enabled: true,
+        description: "Select objects",
+    },
+    {
+        icon: "pencil-fill",
+        iconset: "default",
+        mode: "edit",
+        enabled: false,
+        description: "Edit objects",
+    },
+    {
+        icon: "arrows-move",
+        iconset: "default",
+        mode: "move",
+        enabled: false,
+        description: "Move objects",
     },
     {
         icon: "geo-alt",
         iconset: "default",
         mode: "draw-point",
+        enabled: true,
+        description: "Create points",
     },
     {
         icon: "line",
         iconset: "app-icons",
         mode: "draw-line-string",
+        enabled: true,
+        description: "Create lines",
     },
     {
         icon: "polygon",
         iconset: "app-icons",
         mode: "draw-polygon",
+        enabled: false,
+        description: "Create polygons",
     },
     {
         icon: "rectangle",
         iconset: "app-icons",
         mode: "draw-rectangle",
+        enabled: false,
+        description: "Create rectangles",
     },
     {
         icon: "circle",
         iconset: "default",
         mode: "draw-circle",
+        enabled: false,
+        description: "Create circles",
     },
 ];
 
@@ -87,6 +115,11 @@ export class EditorWindow extends EditorElement {
         console.log("EditorWindow constructor");
     }
     private _handleKeyDown(event: KeyboardEvent) {
+        // give the document renderer a chance to handle the key event first
+        if (this._documentRenderer?.onKeyDown(event)) {
+            return;
+        }
+
         if (event.ctrlKey || event.metaKey) {
             if (event.key === "z") {
                 event.preventDefault();
@@ -177,7 +210,13 @@ export class EditorWindow extends EditorElement {
             );
             if (provider) {
                 const blob = new Blob([lastDoc], { type: lastDocMimeType });
-                this._openFile(provider, blob, lastDocName, undoBufferArgs);
+                this._openFile(
+                    provider,
+                    blob,
+                    lastDocName,
+                    lastDocMimeType,
+                    undoBufferArgs
+                );
             }
         }
     }
@@ -210,6 +249,7 @@ export class EditorWindow extends EditorElement {
         provider: DocumentProvider,
         blob: Blob,
         name: string,
+        mimeType: string,
         undoBufferArgs?: UndoBufferArgs
     ) {
         this._document = await provider.openDocument(blob, name);
@@ -223,6 +263,14 @@ export class EditorWindow extends EditorElement {
         this._hasUndo = editor.undoBuffer.canGoBack();
         this._hasRedo = editor.undoBuffer.canGoForward();
 
+        const text = await blob.text();
+        window.localStorage.setItem("lastDocument", text);
+        window.localStorage.setItem("lastDocumentProvider", provider.id);
+        window.localStorage.setItem("lastDocumentName", name);
+        window.localStorage.setItem("lastDocumentMimeType", mimeType);
+        window.localStorage.removeItem("lastAutoSave");
+        window.localStorage.removeItem("lastAutoSaveUndoBuffer");
+
         return this._document;
     }
 
@@ -235,6 +283,24 @@ export class EditorWindow extends EditorElement {
             );
         }
     }
+
+    private _createNewDoc() {
+        const EMPTY_COLLECTION = {
+            type: "FeatureCollection",
+            features: [],
+        };
+
+        this._openFile(
+            new GeoDocumentProviderGeoJson(),
+            new Blob([JSON.stringify(EMPTY_COLLECTION)], {
+                type: "application/json",
+            }),
+            "newDocument.json",
+            "application/json",
+            undefined
+        );
+    }
+
     private _promptForFile(provider: DocumentProvider) {
         const input = Object.assign(document.createElement("input"), {});
 
@@ -249,32 +315,15 @@ export class EditorWindow extends EditorElement {
 
         input.addEventListener("change", async () => {
             if (input.files) {
-                if (
-                    await this._openFile(
-                        provider,
-                        input.files[0],
-                        input.files[0].name,
-                        undefined
-                    )
-                ) {
-                    const text = await input.files[0].text();
-                    window.localStorage.setItem("lastDocument", text);
-                    window.localStorage.setItem(
-                        "lastDocumentProvider",
-                        provider.id
-                    );
-                    window.localStorage.setItem(
-                        "lastDocumentName",
-                        input.files[0].name
-                    );
-                    window.localStorage.setItem(
-                        "lastDocumentMimeType",
-                        input.files[0].type
-                    );
-                    window.localStorage.removeItem("lastAutoSave");
-                    window.localStorage.removeItem("lastAutoSaveUndoBuffer");
-                }
+                await this._openFile(
+                    provider,
+                    input.files[0],
+                    input.files[0].name,
+                    input.files[0].type,
+                    undefined
+                );
             }
+
             document.body.removeChild(input);
         });
         input.addEventListener("oncancel", () => {
@@ -308,6 +357,10 @@ export class EditorWindow extends EditorElement {
                             >Open</sl-button
                         >
                         <sl-menu>
+                            <sl-menu-item @click=${() => this._createNewDoc()}
+                                >New GeoJSON file</sl-menu-item
+                            >
+                            <sl-divider></sl-divider>
                             ${getGeoDocumentProviders().map(
                                 (provider) =>
                                     html`<sl-menu-item
@@ -370,16 +423,19 @@ export class EditorWindow extends EditorElement {
                 <span></span>
                 ${EditorWindowModes.map(
                     (mode) =>
-                        html`<sl-icon-button
-                            class=${classMap({
-                                active: this.mode === mode.mode,
-                            })}
-                            name=${mode.icon}
-                            library=${ifDefined(mode.iconset)}
-                            @click=${() => {
-                                this.mode = mode.mode;
-                            }}
-                        ></sl-icon-button>`
+                        html`<sl-tooltip content=${mode.description}
+                            ><sl-icon-button
+                                class=${classMap({
+                                    active: this.mode === mode.mode,
+                                })}
+                                ?disabled=${!mode.enabled}
+                                name=${mode.icon}
+                                library=${ifDefined(mode.iconset)}
+                                @click=${() => {
+                                    this.mode = mode.mode;
+                                }}
+                            ></sl-icon-button
+                        ></sl-tooltip>`
                 )}
             </div>
             <div class="left-panels">

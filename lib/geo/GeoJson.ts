@@ -1,9 +1,14 @@
-import { kml, gpx } from "@mapbox/togeojson";
+import { gpx, kml } from "@mapbox/togeojson";
 
 import { bbox } from "@turf/bbox";
 import center from "@turf/center";
 import { length } from "@turf/length";
-import { Feature, FeatureCollection, GeoJsonProperties, LineString } from "geojson";
+import {
+    Feature,
+    FeatureCollection,
+    GeoJsonProperties,
+    LineString,
+} from "geojson";
 
 export type GeoSourceType = "kml" | "geojson" | "gpx";
 
@@ -68,7 +73,10 @@ export class GeoJson {
         return undefined;
     }
 
-    public static createFromString(type: GeoSourceType, text: string): GeoJson | undefined {
+    public static createFromString(
+        type: GeoSourceType,
+        text: string
+    ): GeoJson | undefined {
         switch (type) {
             case "kml":
                 return this.createFromKMLString(text);
@@ -98,7 +106,9 @@ export class GeoJson {
         return GeoJson.createFromGeoJson(geojson);
     }
 
-    public static createFromGeoJson(features: GeoJSON.FeatureCollection): GeoJson | undefined {
+    public static createFromGeoJson(
+        features: GeoJSON.FeatureCollection
+    ): GeoJson | undefined {
         return new GeoJson(features);
     }
 
@@ -115,6 +125,9 @@ export class GeoJson {
     }
 
     public bbox() {
+        if (this.features.features.length === 0) {
+            return undefined;
+        }
         const b = bbox(this.features);
         return {
             sw: makeLocation(b[1], b[0]),
@@ -132,9 +145,12 @@ export class GeoJson {
         let totalLength = 0;
         for (const f of this.features.features) {
             if (f.geometry.type === "LineString") {
-                totalLength += length(f as Feature<LineString, GeoJsonProperties>, {
-                    units: "metres",
-                });
+                totalLength += length(
+                    f as Feature<LineString, GeoJsonProperties>,
+                    {
+                        units: "metres",
+                    }
+                );
             }
         }
         return totalLength;

@@ -1,4 +1,5 @@
 import { MapMouseEvent } from "mapbox-gl";
+import { GeoJsonSource } from "./GeoJsonSource";
 import { MapboxMap } from "./MapboxMap";
 
 export abstract class InteractionMode {
@@ -6,10 +7,14 @@ export abstract class InteractionMode {
     public abstract displayName: string;
     public abstract description: string;
     public readonly cursor: string = "";
+    public readonly useEditLayer: boolean = false;
 
     private _isActive = false;
 
-    constructor(protected _map: MapboxMap) {}
+    constructor(
+        protected _map: MapboxMap,
+        protected _geoSource: GeoJsonSource
+    ) {}
 
     public get isActive(): boolean {
         return this._isActive;
@@ -32,4 +37,7 @@ export abstract class InteractionMode {
     public onClick(_event: MapMouseEvent): void {}
     public onMouseMove(_event: MapMouseEvent): void {}
     public onMouseLeave(_event: MapMouseEvent): void {}
+    public onKeyDown(_event: KeyboardEvent): boolean {
+        return false;
+    }
 }

@@ -16,7 +16,8 @@ if (DEV_MODE) {
     console.log(DEV_MODE ? "DEVELOPMENT BUILD" : "PRODUCTION BUILD");
 }
 
-const SHOELACE_ASSET_ROOT = "node_modules/@shoelace-style/shoelace/dist/assets/icons";
+const SHOELACE_ASSET_ROOT =
+    "node_modules/@shoelace-style/shoelace/dist/assets/icons";
 const SHOELACE_ICONS = [
     "plus",
     "dash-lg",
@@ -36,6 +37,8 @@ const SHOELACE_ICONS = [
     "info-circle",
     "plus-lg",
     "cursor-fill",
+    "pencil-fill",
+    "arrows-move",
 ];
 
 function getShoelaceIconTargets(destDir) {
