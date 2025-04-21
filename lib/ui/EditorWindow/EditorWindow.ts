@@ -34,7 +34,15 @@ import { showToast } from "ui-lib/Utils";
 import "../DocumentEditor";
 import "../DocumentHistory";
 
-const EditorWindowModes = [
+type ModeT = {
+    icon: string;
+    iconset: string;
+    mode: string;
+    enabled: boolean | ((selectionSet: string[]) => boolean);
+    description: string;
+};
+
+const EditorWindowModes: ModeT[] = [
     {
         icon: "cursor-fill",
         iconset: "default",
@@ -46,7 +54,7 @@ const EditorWindowModes = [
         icon: "pencil-fill",
         iconset: "default",
         mode: "edit",
-        enabled: false,
+        enabled: true,
         description: "Edit objects",
     },
     {
@@ -104,6 +112,7 @@ export class EditorWindow extends EditorElement {
     @state() protected _hasRedo = false;
     @state() protected _darkMode = true;
     @state() protected _deleteEnabled = false;
+    @state() protected _currentSelectionSet: string[] = [];
 
     @query("ds-document-renderer")
     protected _documentRenderer?: GeoDocumentRenderer;
@@ -114,6 +123,7 @@ export class EditorWindow extends EditorElement {
         super();
         console.log("EditorWindow constructor");
     }
+
     private _handleKeyDown(event: KeyboardEvent) {
         // give the document renderer a chance to handle the key event first
         if (this._documentRenderer?.onKeyDown(event)) {
@@ -144,6 +154,7 @@ export class EditorWindow extends EditorElement {
         super._selectionSetChanged(_args);
         if (this._editor) {
             this._deleteEnabled = this._editor.selectionSet.length > 0;
+            this._currentSelectionSet = this._editor.selectionSet.toArray();
         }
     }
 
@@ -333,6 +344,15 @@ export class EditorWindow extends EditorElement {
         input.click();
     }
 
+    private _isModeEnabled(mode: ModeT, selectionSet: string[]): boolean {
+        if (mode) {
+            return mode.enabled instanceof Function
+                ? mode.enabled(selectionSet)
+                : mode.enabled;
+        }
+        return false;
+    }
+
     override render() {
         return html`<div class="editor-window">
             ${this._document
@@ -428,7 +448,10 @@ export class EditorWindow extends EditorElement {
                                 class=${classMap({
                                     active: this.mode === mode.mode,
                                 })}
-                                ?disabled=${!mode.enabled}
+                                ?disabled=${!this._isModeEnabled(
+                                    mode,
+                                    this._currentSelectionSet
+                                )}
                                 name=${mode.icon}
                                 library=${ifDefined(mode.iconset)}
                                 @click=${() => {

@@ -33,8 +33,12 @@ export abstract class InteractionMode {
         this._isActive = false;
     }
 
+    public render(): void {}
+    public onSelectionSetChanged(_selectionSet: string[]): void {}
     public onDrag(_event: MapMouseEvent): void {}
     public onClick(_event: MapMouseEvent): void {}
+    public onMouseDown(_event: MapMouseEvent): void {}
+    public onMouseUp(_event: MapMouseEvent): void {}
     public onMouseMove(_event: MapMouseEvent): void {}
     public onMouseLeave(_event: MapMouseEvent): void {}
     public onKeyDown(_event: KeyboardEvent): boolean {

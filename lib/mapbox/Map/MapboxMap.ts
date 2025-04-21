@@ -12,6 +12,7 @@ import { watch } from "../../ui-utils/watch";
 import { GeoJsonSource } from "./GeoJsonSource";
 import { InteractionMode } from "./InteractionMode";
 import { CreatePointMode } from "./modes/CreatePointMode";
+import { EditMode } from "./modes/EditMode";
 import { LineEditorMode } from "./modes/LineEditorMode";
 import { SelectMode } from "./modes/SelectMode";
 
@@ -42,7 +43,9 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
 }
 
 export type InteractionModes =
+    | "edit"
     | "select"
+    | "move-feature"
     | "draw-point"
     | "draw-line-string"
     | "draw-polygon"
@@ -65,10 +68,89 @@ export class MapboxMap extends BaseElement {
     private _currentLayer?: GeoJsonSource;
 
     private _interactionMode?: InteractionMode;
+    private _currentEditFeature?: GeoJSON.Feature;
 
+    // we need to load the css before we can create the map
     @state() protected _cssLoaded = false;
 
     @query("#map-container") protected _mapContainer?: HTMLElement;
+
+    @watch("config")
+    _onConfigChange() {
+        this._config = merge(makeConfig(), this.config);
+        this._initMap();
+    }
+
+    @watch("_cssLoaded")
+    _onCssLoaded() {
+        this._initMap();
+    }
+
+    @watch("selectionSet")
+    _onSelectionSetChange() {
+        if (this.mapboxGL) {
+            this._currentLayer?.setSelectionSet(this.selectionSet);
+            this._interactionMode?.onSelectionSetChanged(this.selectionSet);
+        }
+    }
+
+    //---------------------------------------------------------------
+    // Public functions
+    //---------------------------------------------------------------
+
+    public zoomIn() {
+        if (this.mapboxGL) {
+            this.mapboxGL.zoomIn();
+        }
+    }
+
+    public zoomOut() {
+        if (this.mapboxGL) {
+            this.mapboxGL.zoomOut();
+        }
+    }
+
+    public fitBounds(ne: Location, sw: Location) {
+        if (this.mapboxGL) {
+            const bb = new mapboxgl.LngLatBounds(
+                new mapboxgl.LngLat(sw.lon, sw.lat),
+                new mapboxgl.LngLat(ne.lon, ne.lat)
+            );
+            this.mapboxGL.fitBounds(bb, {
+                padding: 20,
+            });
+        }
+    }
+
+    public editFeature(feature: GeoJSON.Feature) {
+        this._currentEditFeature = feature;
+        switch (feature.geometry.type) {
+            case "Point":
+                this.mode = "move-feature";
+                break;
+            case "LineString":
+                this.mode = "draw-line-string";
+                break;
+            case "Polygon":
+                this.mode = "draw-polygon";
+                break;
+            case "MultiPoint":
+                this.mode = "move-feature";
+                break;
+            case "MultiLineString":
+                this.mode = "draw-line-string";
+                break;
+            case "MultiPolygon":
+                this.mode = "draw-polygon";
+                break;
+            default:
+                throw new Error("Unsupported geometry type");
+        }
+    }
+
+    //---------------------------------------------------------------
+    // Interaction modes
+    //---------------------------------------------------------------
 
     @watch("mode")
     _onModeChange() {
@@ -95,55 +177,6 @@ export class MapboxMap extends BaseElement {
         this._interactionMode.onActivate();
     }
 
-    @watch("    fig")
-    _onConfigChange() {
-        this._config = merge(makeConfig(), this.config);
-
-        this._initMap();
-    }
-
-    @watch("_cssLoaded")
-    _onCssLoaded() {
-        this._initMap();
-    }
-
-    @watch("selectionSet")
-    _onSelectionSetChange() {
-        if (this.mapboxGL) {
-            this._currentLayer?.setSelectionSet(this.selectionSet);
-        }
-    }
-
-    public zoomIn() {
-        if (this.mapboxGL) {
-            this.mapboxGL.zoomIn();
-        }
-    }
-
-    public zoomOut() {
-        if (this.mapboxGL) {
-            this.mapboxGL.zoomOut();
-        }
-    }
-
-    public fitBounds(ne: Location, sw: Location) {
-        if (this.mapboxGL) {
-            const bb = new mapboxgl.LngLatBounds(
-                new mapboxgl.LngLat(sw.lon, sw.lat),
-                new mapboxgl.LngLat(ne.lon, ne.lat)
-            );
-            this.mapboxGL.fitBounds(bb, {
-                padding: 20,
-            });
-        }
-    }
-
-    private _onMouseMove(e: MapMouseEvent) {
-        if (this._interactionMode) {
-            this._interactionMode.onMouseMove(e);
-        }
-    }
-
     private _createMode(mode: InteractionModes): InteractionMode {
         if (!this._geoEditLayer || !this._geoLayer) {
             throw new Error("GeoJsonLayer is not initialized.");
@@ -154,13 +187,19 @@ export class MapboxMap extends BaseElement {
             case "draw-point":
                 return new CreatePointMode(this, this._geoLayer);
             case "draw-line-string":
-                return new LineEditorMode(this, this._geoEditLayer);
+                return new LineEditorMode(
+                    this,
+                    this._geoEditLayer,
+                    this._currentEditFeature
+                );
             case "draw-polygon":
                 return new SelectMode(this, this._geoLayer);
             case "draw-circle":
                 return new SelectMode(this, this._geoLayer);
             case "draw-rectangle":
                 return new SelectMode(this, this._geoLayer);
+            case "edit":
+                return new EditMode(this, this._geoLayer);
             default:
                 throw new Error(`Unknown mode: ${mode}`);
         }
@@ -175,6 +214,24 @@ export class MapboxMap extends BaseElement {
             return this._interactionMode.onKeyDown(event);
         }
         return false;
+    }
+
+    private _onMouseMove(e: MapMouseEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onMouseMove(e);
+        }
+    }
+
+    private _onMouseDown(e: MapMouseEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onMouseDown(e);
+        }
+    }
+
+    private _onMouseUp(e: MapMouseEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onMouseUp(e);
+        }
     }
 
     private _onMouseLeave(event: MapMouseEvent) {
@@ -195,6 +252,29 @@ export class MapboxMap extends BaseElement {
 
     public setGeoJsonLayer(geo: GeoJSON.FeatureCollection) {
         this._geoLayer?.update(geo);
+        this._geoLayer?.setSelectionSet(this.selectionSet);
+    }
+
+    private _geoJsonSourceEvent(
+        _sourceName: string,
+        eventName: string,
+        e: MapMouseEvent
+    ) {
+        if (this._interactionMode) {
+            switch (eventName) {
+                case "mousemove":
+                    this._onMouseMove(e);
+                    break;
+                case "mouseleave":
+                    this._onMouseLeave(e);
+                    break;
+                case "click":
+                    this._onClick(e);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     //---------------------------------------------------------------
@@ -232,17 +312,24 @@ export class MapboxMap extends BaseElement {
                 zoom: this._config.map.zoom,
                 pitch: this._config.map.pitch,
             });
+            const MAP_EVENTS = [
+                { event: "mousemove", func: this._onMouseMove.bind(this) },
+                { event: "mousedown", func: this._onMouseDown.bind(this) },
+                { event: "mouseup", func: this._onMouseUp.bind(this) },
+                { event: "mouseleave", func: this._onMouseLeave.bind(this) },
 
-            this.mapboxGL.on("click", (e: MapMouseEvent) => {
-                if (this._interactionMode) {
-                    this._interactionMode.onClick(e);
-                }
-            });
-            this.mapboxGL.on("keydown", (e: KeyboardEvent) => {
-                if (this._interactionMode) {
-                    this._interactionMode.onKeyDown(e);
-                }
-            });
+                { event: "click", func: this._onClick.bind(this) },
+                { event: "keydown", func: this.onKeyDown.bind(this) },
+            ];
+
+            for (const { event, func } of MAP_EVENTS) {
+                this.mapboxGL.on(event, (e: any) => {
+                    if (this._interactionMode) {
+                        func(e);
+                    }
+                });
+            }
+
             this.mapboxGL.on("load", () => {
                 this._geoEditLayer = new GeoJsonSource(
                     this,
@@ -258,28 +345,6 @@ export class MapboxMap extends BaseElement {
                 resolve();
             });
         });
-    }
-
-    private _geoJsonSourceEvent(
-        _sourceName: string,
-        eventName: string,
-        e: MapMouseEvent
-    ) {
-        if (this._interactionMode) {
-            switch (eventName) {
-                case "mousemove":
-                    this._onMouseMove(e);
-                    break;
-                case "mouseleave":
-                    this._onMouseLeave(e);
-                    break;
-                case "click":
-                    this._onClick(e);
-                    break;
-                default:
-                    break;
-            }
-        }
     }
 
     private async _initMap() {
@@ -309,10 +374,22 @@ export class MapboxMap extends BaseElement {
         //   this._disableRightMouseDragRotate();
     }
 
+    //---------------------------------------------------------------
+    // LitElement Overrides
+    //---------------------------------------------------------------
+
     override firstUpdated() {
         if (this._mapContainer) {
             this._initMap();
         }
+        requestAnimationFrame(() => this._animationFrameUpdate());
+    }
+
+    private _animationFrameUpdate() {
+        if (this._interactionMode) {
+            this._interactionMode.render();
+        }
+        requestAnimationFrame(() => this._animationFrameUpdate());
     }
 
     override render() {

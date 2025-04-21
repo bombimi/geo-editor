@@ -1,9 +1,14 @@
 import { uuidv4 } from "editor/Utils";
-import { GeoJSONSource, Map as MapboxGLMap, MapMouseEvent } from "mapbox-gl";
+import { Feature } from "geojson";
+import { cloneDeep, uniqBy } from "lodash-es";
+import {
+    GeoJSONSource,
+    Map as MapboxGLMap,
+    MapMouseEvent,
+    Point,
+} from "mapbox-gl";
 import { MapboxMap } from "./MapboxMap";
 import { getMapLayers } from "./MapLayers";
-
-const LAYER_EVENTS = ["mousemove", "click", "mouseleave"];
 
 export class GeoJsonSource {
     private _mapboxGL: MapboxGLMap;
@@ -12,9 +17,10 @@ export class GeoJsonSource {
     // appears to be a number. So we need to keep track of the mapping between
     // the GUID and the ID. The ID is used to set the feature state and the GUID
     // is used to identify the feature in the selection set.
-    private _currentFeatureID = 0;
+    private _currentFeatureID = 1;
     private _idToGuid = new Map<number, string>();
     private _guidToId = new Map<string, number>();
+    private _guidToFeature = new Map<string, Feature>();
 
     public active = false;
 
@@ -41,10 +47,6 @@ export class GeoJsonSource {
     public dispose() {
         const layers = getMapLayers(this._name);
         for (const layer of layers) {
-            for (const event of LAYER_EVENTS) {
-                this._mapboxGL.off(event, layer.id);
-            }
-
             this._mapboxGL.removeLayer(layer.id);
         }
         this._mapboxGL.removeSource(this._name);
@@ -68,6 +70,18 @@ export class GeoJsonSource {
         return this._idToGuid.get(id);
     }
 
+    public featureFromGuid(guid: string): Feature | undefined {
+        return this._guidToFeature.get(guid);
+    }
+
+    public featuresAtScreenLocation(point: Point): Feature[] {
+        const layers = getMapLayers(this._name).map((layer) => layer.id);
+        const features = this._mapboxGL.queryRenderedFeatures(point, {
+            layers,
+        });
+        return uniqBy(features, (f) => f.properties!.__meta_guid);
+    }
+
     private _createSourceAndLayers() {
         this._mapboxGL.addSource(this._name, {
             type: "geojson",
@@ -80,14 +94,6 @@ export class GeoJsonSource {
         const layers = getMapLayers(this._name);
         for (const layer of layers) {
             this._mapboxGL.addLayer(layer);
-
-            for (const event of LAYER_EVENTS) {
-                this._mapboxGL.on(event, layer.id, (e: MapMouseEvent) => {
-                    if (this.active && this._eventCallback) {
-                        this._eventCallback(this._name, event, e);
-                    }
-                });
-            }
         }
     }
 
@@ -96,25 +102,41 @@ export class GeoJsonSource {
             return;
         }
 
-        const features = geo.features;
+        const newGeo = cloneDeep(geo);
 
-        // add feature to id mapping for new objects
-        for (const feature of features) {
-            const guid = feature.properties?.__meta_guid;
-            console.assert(guid !== undefined, "Feature does not have a guid");
-            if (!this._guidToId.has(feature.properties?.__meta_guid)) {
-                const guid = feature.properties?.__meta_guid || uuidv4();
-                feature.id = this._currentFeatureID++;
-                this._idToGuid.set(feature.id, guid);
-                this._guidToId.set(guid, feature.id);
-            }
+        this._guidToFeature.clear();
+        this._guidToId.clear();
+        this._idToGuid.clear();
+
+        for (const feature of newGeo.features) {
+            feature.id = this._currentFeatureID++;
+            const guid = feature.properties?.__meta_guid || uuidv4();
+            this._idToGuid.set(feature.id, guid);
+            this._guidToId.set(guid, feature.id);
+            this._guidToFeature.set(guid, feature);
         }
+
+        // const features = geo.features;
+        // // add feature to id mapping for new objects
+        // for (const feature of features) {
+        //     const guid = feature.properties?.__meta_guid;
+        //     console.assert(guid !== undefined, "Feature does not have a guid");
+        //     if (!this._guidToId.has(feature.properties?.__meta_guid)) {
+        //         const guid = feature.properties?.__meta_guid || uuidv4();
+        //         feature.id = this._currentFeatureID++
+        //         this._idToGuid.set(feature.id, guid);
+        //         this._guidToId.set(guid, feature.id);
+        //     } else {
+        //         feature.id = this._guidToId.get(guid)!;
+        //     }
+        //     this._guidToFeature.set(guid, feature);
+        // }
 
         // just update the existing layer and avoid the full redraw if we are initialized
         const source = this._mapboxGL.getSource(this._name) as GeoJSONSource;
         console.assert(source, `Source ${this._name} not found`);
         if (source) {
-            source.setData(geo);
+            source.setData(newGeo);
         }
     }
 }

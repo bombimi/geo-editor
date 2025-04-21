@@ -5,6 +5,8 @@ import { EditorElement } from "../EditorElement";
 import { styles } from "./GeoDocumentRenderer.style";
 
 import { CreateFeatureCommand } from "geo/commands/CreateFeatureCommand";
+import { UpdateFeatureCommand } from "geo/commands/UpdateFeatureCommand";
+import { Feature } from "geojson";
 import { GeoDocument } from "../../geo/GeoDocument";
 import { Bounds } from "../../geo/GeoJson";
 import { MoveObjectCommand } from "../../geo/commands/MoveObjectCommand";
@@ -95,6 +97,17 @@ export class GeoDocumentRenderer extends EditorElement {
                 .selectionSet=${this._selectionSet}
                 .mode=${this.mode as unknown as InteractionModes}
                 @map-loaded=${() => this._editorInit()}
+                @update-feature=${(e: CustomEvent) => {
+                    if (this._editor) {
+                        this._editor.applyCommand(
+                            new UpdateFeatureCommand({
+                                selectionSet: [],
+                                feature: e.detail as Feature,
+                                featureGuid: e.detail.properties.__meta_guid,
+                            })
+                        );
+                    }
+                }}
                 @create-feature=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(

@@ -27,13 +27,13 @@ export class SelectMode extends InteractionMode {
 
     public override onClick(e: MapMouseEvent): void {
         console.assert(this.isActive, "SelectMode is not active");
-        if (this._map && e.features && e.features.length) {
+        const features = this._geoSource.featuresAtScreenLocation(e.point);
+
+        if (this._map && features && features.length) {
             this._map.dispatchEvent(
                 createCustomEvent(
                     "object-selected",
-                    this._geoSource.featureGuidFromId(
-                        e.features[0].id as number
-                    )
+                    this._geoSource.featureGuidFromId(features[0].id as number)
                 )
             );
         }
@@ -65,6 +65,9 @@ export class SelectMode extends InteractionMode {
     public override onMouseMove(e: MapMouseEvent): void {
         console.assert(this.isActive, "SelectMode is not active");
 
+        // get features at the mouse position
+        const features = this._geoSource.featuresAtScreenLocation(e.point);
+
         if (this._map.mapboxGL) {
             if (this._hoveredFeatureId) {
                 this._map.mapboxGL.setFeatureState(
@@ -73,8 +76,8 @@ export class SelectMode extends InteractionMode {
                 );
                 this._hoveredFeatureId = undefined;
             }
-            if (e.features && e.features.length) {
-                this._hoveredFeatureId = e.features[0].id;
+            if (features && features.length) {
+                this._hoveredFeatureId = features[0].id;
                 this._map.mapboxGL.setFeatureState(
                     {
                         source: "map-data",

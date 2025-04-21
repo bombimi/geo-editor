@@ -2,6 +2,7 @@ import { registerCommand } from "editor/CommandFactory";
 import { registerDocumentObject } from "editor/DocumentObjectFactory";
 import { CreateFeatureCommand } from "./commands/CreateFeatureCommand";
 import { MoveObjectCommand } from "./commands/MoveObjectCommand";
+import { UpdateFeatureCommand } from "./commands/UpdateFeatureCommand";
 import { LineStringObject } from "./objects/LineStringObject";
 import { PointObject } from "./objects/PointObject";
 
@@ -14,5 +15,8 @@ export function registerGeoDocumentObjects(): void {
     });
     registerCommand("CreateFeatureCommand", (args) => {
         return new CreateFeatureCommand(args);
+    });
+    registerCommand("UpdateFeatureCommand", (args) => {
+        return new UpdateFeatureCommand(args);
     });
 }
