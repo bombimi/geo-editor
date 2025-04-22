@@ -14,7 +14,7 @@ import { GeoJsonSource } from "./GeoJsonSource";
 import { InteractionMode } from "./InteractionMode";
 import { CreatePointMode } from "./modes/CreatePointMode";
 import { EditMode } from "./modes/EditMode";
-import { LineEditorMode } from "./modes/LineEditorMode";
+import { LineEditMode } from "./modes/LineEditMode";
 import { SelectMode } from "./modes/SelectMode";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
@@ -208,7 +208,7 @@ export class MapboxMap extends BaseElement {
             case "draw-point":
                 return new CreatePointMode(this, this._geoLayer);
             case "draw-line-string":
-                return new LineEditorMode(this, this._geoEditLayer, feature);
+                return new LineEditMode(this, this._geoEditLayer, feature);
             case "draw-polygon":
                 return new SelectMode(this, this._geoLayer);
             case "draw-circle":
@@ -329,12 +329,12 @@ export class MapboxMap extends BaseElement {
                 zoom: this._config.map.zoom,
                 pitch: this._config.map.pitch,
             });
+
             const MAP_EVENTS = [
                 { event: "mousemove", func: this._onMouseMove.bind(this) },
                 { event: "mousedown", func: this._onMouseDown.bind(this) },
                 { event: "mouseup", func: this._onMouseUp.bind(this) },
                 { event: "mouseleave", func: this._onMouseLeave.bind(this) },
-
                 { event: "click", func: this._onClick.bind(this) },
                 { event: "keydown", func: this.onKeyDown.bind(this) },
             ];
@@ -348,17 +348,16 @@ export class MapboxMap extends BaseElement {
             }
 
             this.mapboxGL.on("load", () => {
-                this._geoEditLayer = new GeoJsonSource(
-                    this,
-                    "map-edit",
-                    this._geoJsonSourceEvent.bind(this)
-                );
                 this._geoLayer = new GeoJsonSource(
                     this,
                     "map-data",
                     this._geoJsonSourceEvent.bind(this)
                 );
-
+                this._geoEditLayer = new GeoJsonSource(
+                    this,
+                    "map-edit",
+                    this._geoJsonSourceEvent.bind(this)
+                );
                 resolve();
             });
         });
