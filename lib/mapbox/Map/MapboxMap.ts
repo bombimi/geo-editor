@@ -6,6 +6,7 @@ import { styles } from "./MapboxMap.style";
 import { merge } from "lodash-es";
 import mapboxgl, { Map as MapboxGLMap, MapMouseEvent } from "mapbox-gl";
 
+import { Feature } from "geojson";
 import { Location } from "../../geo/GeoJson";
 import { BaseElement } from "../../ui-lib/BaseElement";
 import { watch } from "../../ui-utils/watch";
@@ -52,13 +53,16 @@ export type InteractionModes =
     | "draw-circle"
     | "draw-rectangle";
 
+export type ModeFeaturePair = {
+    mode: InteractionModes;
+    feature?: GeoJSON.Feature;
+};
 @customElement("ds-map")
 export class MapboxMap extends BaseElement {
     static override styles = [styles];
 
     @property({ type: Object }) config: MapConfig = makeConfig();
     @property({ type: Array }) selectionSet: string[] = [];
-    @property({ type: String }) mode: InteractionModes = "select";
 
     public mapboxGL?: MapboxGLMap;
     private _config = this.config;
@@ -68,7 +72,6 @@ export class MapboxMap extends BaseElement {
     private _currentLayer?: GeoJsonSource;
 
     private _interactionMode?: InteractionMode;
-    private _currentEditFeature?: GeoJSON.Feature;
 
     // we need to load the css before we can create the map
     @state() protected _cssLoaded = false;
@@ -122,26 +125,25 @@ export class MapboxMap extends BaseElement {
         }
     }
 
-    public editFeature(feature: GeoJSON.Feature) {
-        this._currentEditFeature = feature;
+    private _getEditModeForFeature(feature: GeoJSON.Feature) {
         switch (feature.geometry.type) {
             case "Point":
-                this.mode = "move-feature";
+                return "move-feature";
                 break;
             case "LineString":
-                this.mode = "draw-line-string";
+                return "draw-line-string";
                 break;
             case "Polygon":
-                this.mode = "draw-polygon";
+                return "draw-polygon";
                 break;
             case "MultiPoint":
-                this.mode = "move-feature";
+                return "move-feature";
                 break;
             case "MultiLineString":
-                this.mode = "draw-line-string";
+                return "draw-line-string";
                 break;
             case "MultiPolygon":
-                this.mode = "draw-polygon";
+                return "draw-polygon";
                 break;
             default:
                 throw new Error("Unsupported geometry type");
@@ -152,8 +154,14 @@ export class MapboxMap extends BaseElement {
     // Interaction modes
     //---------------------------------------------------------------
 
-    @watch("mode")
-    _onModeChange() {
+    public editFeature(feature: GeoJSON.Feature) {
+        if (!this._geoEditLayer || !this._geoLayer) {
+            return;
+        }
+        this.setMode("edit", feature);
+    }
+
+    public setMode(mode: InteractionModes, feature?: Feature) {
         if (!this._geoEditLayer || !this._geoLayer) {
             return;
         }
@@ -161,7 +169,7 @@ export class MapboxMap extends BaseElement {
         if (this._interactionMode) {
             this._interactionMode.onDeactivate();
         }
-        this._interactionMode = this._createMode(this.mode);
+        this._interactionMode = this._createMode(mode, feature);
 
         if (this._geoLayer && this._geoEditLayer) {
             if (this._interactionMode.useEditLayer) {
@@ -175,23 +183,32 @@ export class MapboxMap extends BaseElement {
             }
         }
         this._interactionMode.onActivate();
+        this._interactionMode.onSelectionSetChanged(this.selectionSet);
     }
 
-    private _createMode(mode: InteractionModes): InteractionMode {
+    private _createMode(
+        mode: InteractionModes,
+        feature?: Feature
+    ): InteractionMode {
         if (!this._geoEditLayer || !this._geoLayer) {
             throw new Error("GeoJsonLayer is not initialized.");
         }
+        if (mode === "edit") {
+            if (this.selectionSet.length === 1 && feature === undefined) {
+                feature = this._geoLayer.featureFromGuid(this.selectionSet[0]);
+            }
+            if (feature) {
+                mode = this._getEditModeForFeature(feature) ?? "edit";
+            }
+        }
+
         switch (mode) {
             case "select":
                 return new SelectMode(this, this._geoLayer);
             case "draw-point":
                 return new CreatePointMode(this, this._geoLayer);
             case "draw-line-string":
-                return new LineEditorMode(
-                    this,
-                    this._geoEditLayer,
-                    this._currentEditFeature
-                );
+                return new LineEditorMode(this, this._geoEditLayer, feature);
             case "draw-polygon":
                 return new SelectMode(this, this._geoLayer);
             case "draw-circle":
@@ -365,7 +382,7 @@ export class MapboxMap extends BaseElement {
         const icons = ["point"];
         await Promise.all(icons.map((icon) => this._loadImage(icon)));
 
-        this._onModeChange();
+        this.setMode("select");
 
         this.dispatchEvent(
             new CustomEvent("map-loaded", { bubbles: true, composed: true })

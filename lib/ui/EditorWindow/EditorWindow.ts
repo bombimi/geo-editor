@@ -11,7 +11,7 @@ import "@shoelace-style/shoelace/dist/components/tab/tab.js";
 import "@shoelace-style/shoelace/dist/components/tooltip/tooltip.js";
 
 import { html, PropertyValues } from "lit";
-import { customElement, property, query, state } from "lit/decorators.js";
+import { customElement, query, state } from "lit/decorators.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
@@ -30,6 +30,9 @@ import { GeoDocumentRenderer } from "../GeoDocumentRenderer";
 
 import { UndoBufferArgs, UndoBufferEventArgs } from "editor/UndoBuffer";
 import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
+import { GeoObject } from "geo/GeoObject";
+import { Feature } from "geojson";
+import { InteractionModes } from "mapbox/Map";
 import { showToast } from "ui-lib/Utils";
 import "../DocumentEditor";
 import "../DocumentHistory";
@@ -105,14 +108,13 @@ const EditorWindowModes: ModeT[] = [
 export class EditorWindow extends EditorElement {
     static override styles = [styles];
 
-    @property({ type: String }) mode = "select";
-
     @state() protected _document: Document | null = null;
     @state() protected _hasUndo = false;
     @state() protected _hasRedo = false;
     @state() protected _darkMode = true;
     @state() protected _deleteEnabled = false;
     @state() protected _currentSelectionSet: string[] = [];
+    @state() protected _currentMode: InteractionModes = "select";
 
     @query("ds-document-renderer")
     protected _documentRenderer?: GeoDocumentRenderer;
@@ -122,6 +124,21 @@ export class EditorWindow extends EditorElement {
     constructor() {
         super();
         console.log("EditorWindow constructor");
+    }
+
+    private _setMode(mode: InteractionModes) {
+        let feature: Feature | undefined;
+        if (mode === "edit") {
+            if (this._currentSelectionSet.length === 1) {
+                feature = (
+                    this._editor?.document.getChild(
+                        this._currentSelectionSet[0]
+                    ) as GeoObject
+                ).feature;
+            }
+        }
+        this._currentMode = mode;
+        this._documentRenderer?.setMode(mode, feature);
     }
 
     private _handleKeyDown(event: KeyboardEvent) {
@@ -146,7 +163,7 @@ export class EditorWindow extends EditorElement {
             }
         } else if (event.key === "Escape" || event.key === "Esc") {
             this._editor?.clearSelection();
-            this.mode = "select";
+            this._setMode("select");
         }
     }
 
@@ -357,7 +374,6 @@ export class EditorWindow extends EditorElement {
         return html`<div class="editor-window">
             ${this._document
                 ? html`<ds-document-renderer
-                      .mode=${this.mode}
                       .editorGuid=${this._editor?.guid}
                   ></ds-document-renderer>`
                 : html`<div class="no-document-container">
@@ -446,7 +462,7 @@ export class EditorWindow extends EditorElement {
                         html`<sl-tooltip content=${mode.description}
                             ><sl-icon-button
                                 class=${classMap({
-                                    active: this.mode === mode.mode,
+                                    active: this._currentMode === mode.mode,
                                 })}
                                 ?disabled=${!this._isModeEnabled(
                                     mode,
@@ -455,7 +471,9 @@ export class EditorWindow extends EditorElement {
                                 name=${mode.icon}
                                 library=${ifDefined(mode.iconset)}
                                 @click=${() => {
-                                    this.mode = mode.mode;
+                                    this._setMode(
+                                        mode.mode as InteractionModes
+                                    );
                                 }}
                             ></sl-icon-button
                         ></sl-tooltip>`

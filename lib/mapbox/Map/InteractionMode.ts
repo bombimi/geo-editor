@@ -16,6 +16,10 @@ export abstract class InteractionMode {
         protected _geoSource: GeoJsonSource
     ) {}
 
+    protected _setCursor(cursor?: string): void {
+        this._map.mapboxGL!.getCanvas().style.cursor = cursor ?? this.cursor;
+    }
+
     public get isActive(): boolean {
         return this._isActive;
     }

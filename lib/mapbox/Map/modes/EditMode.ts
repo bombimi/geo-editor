@@ -13,6 +13,12 @@ export class EditMode extends SelectMode {
         super(map, geoSource);
     }
 
+    public override onSelectionSetChanged(selectionSet: string[]): void {
+        if (selectionSet.length === 1) {
+            this._editFeature(selectionSet[0]);
+        }
+    }
+
     public override onClick(e: MapMouseEvent): void {
         console.assert(this.isActive, "EditMode is not active");
         const features = this._geoSource.featuresAtScreenLocation(e.point);
@@ -22,12 +28,14 @@ export class EditMode extends SelectMode {
             features.length &&
             features[0].properties
         ) {
-            const feature = this._geoSource.featureFromGuid(
-                features[0].properties.__meta_guid
-            );
-            if (feature) {
-                this._map.editFeature(feature);
-            }
+            this._editFeature(features[0].properties.__meta_guid);
+        }
+    }
+
+    private _editFeature(guid: string) {
+        const feature = this._geoSource.featureFromGuid(guid);
+        if (feature) {
+            this._map.editFeature(feature);
         }
     }
 }

@@ -90,6 +90,7 @@ export class LineEditorMode extends InteractionMode {
                 "vertex_selected : addPoint > moveVertex",
                 "mouseup : moveVertex > addPoint",
                 "mouse_move : moveVertex > moveVertex",
+                "vertex_selected : moveVertex > moveVertex",
 
                 // completion
                 "escapePressed : * > resetFeature",
@@ -107,12 +108,26 @@ export class LineEditorMode extends InteractionMode {
                     ] = e.lngLat.toArray();
                     this._markDirty();
                 },
-                "@vertex_selected": (
+
+                "addPoint@vertex_selected": (
                     _event: string,
-                    _fsm: StateMachine,
+                    fsm: StateMachine,
                     feature: Feature
                 ) => {
-                    console.log("LineEditorMode: moveVertex:enter");
+                    console.log("LineEditorMode: addPoint:vertex_selected");
+
+                    // clicking on the current end vertex completes the edit
+                    const overIndex = feature.properties!.__line_editor_index;
+                    if (overIndex !== undefined) {
+                        if (
+                            overIndex ===
+                            this._lineFeature.geometry.coordinates.length - 1
+                        ) {
+                            fsm.do("enterPressed");
+                            return;
+                        }
+                    }
+
                     this._currentFeatureIndex =
                         feature.properties!.__line_editor_index;
                     this._selectedVertexPosition = undefined;
@@ -320,12 +335,6 @@ export class LineEditorMode extends InteractionMode {
                 } else if (groupedFeatures["MAIN_LINE"]?.length) {
                     result = groupedFeatures["MAIN_LINE"][0];
                 }
-
-                // if (result) {
-                //     console.log(
-                //         `LineEditorMode._getFeatureAtScreenLocation: found feature of type ${result.properties?.__line_editor_type}`
-                //     );
-                // }
             }
         }
         return result;
@@ -335,9 +344,9 @@ export class LineEditorMode extends InteractionMode {
         console.assert(this.isActive, "LineEditorMode is not active");
         const feature = this._getFeatureAtScreenLocation(e.point);
         if (feature) {
-            this._map.mapboxGL!.getCanvas().style.cursor = "pointer";
+            this._setCursor("pointer");
         } else {
-            this._map.mapboxGL!.getCanvas().style.cursor = this.cursor;
+            this._setCursor();
         }
 
         this._fsm.do("mouse_move", e);

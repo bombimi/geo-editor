@@ -4,6 +4,7 @@ import { EditorElement } from "../EditorElement";
 
 import { styles } from "./GeoDocumentRenderer.style";
 
+import { GeoObject } from "geo/GeoObject";
 import { CreateFeatureCommand } from "geo/commands/CreateFeatureCommand";
 import { UpdateFeatureCommand } from "geo/commands/UpdateFeatureCommand";
 import { Feature } from "geojson";
@@ -11,26 +12,43 @@ import { GeoDocument } from "../../geo/GeoDocument";
 import { Bounds } from "../../geo/GeoJson";
 import { MoveObjectCommand } from "../../geo/commands/MoveObjectCommand";
 import "../../mapbox/Map/MapboxMap";
-import { InteractionModes, MapboxMap } from "../../mapbox/Map/MapboxMap";
+import {
+    InteractionModes,
+    MapboxMap,
+    ModeFeaturePair,
+} from "../../mapbox/Map/MapboxMap";
 import { StarsStyle } from "./Stars.style";
 
 @customElement("ds-document-renderer")
 export class GeoDocumentRenderer extends EditorElement {
     static override styles = [styles, StarsStyle];
 
-    @property({ type: String }) mode = "select";
+    @property({ type: Object }) mode: ModeFeaturePair = { mode: "select" };
     @state() private _selectionSet: string[] = [];
 
     private _bounds?: Bounds;
 
     @query("#map") protected _map?: MapboxMap;
 
+    public setMode(mode: InteractionModes, feature?: Feature) {
+        if (this._map) {
+            this._map.setMode(mode, feature);
+        }
+    }
     public onKeyDown(event: KeyboardEvent) {
         if (this._map) {
             return this._map.onKeyDown(event);
         }
         return false;
     }
+
+    public editFeature(guid: string) {
+        if (this._map) {
+            const object = this._editor?.document.getChild(guid) as GeoObject;
+            this._map.editFeature(object.feature);
+        }
+    }
+
     public zoomIn() {
         if (this._map) {
             this._map.zoomIn();
@@ -95,7 +113,6 @@ export class GeoDocumentRenderer extends EditorElement {
             <ds-map
                 id="map"
                 .selectionSet=${this._selectionSet}
-                .mode=${this.mode as unknown as InteractionModes}
                 @map-loaded=${() => this._editorInit()}
                 @update-feature=${(e: CustomEvent) => {
                     if (this._editor) {
