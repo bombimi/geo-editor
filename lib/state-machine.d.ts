@@ -13,6 +13,7 @@ declare module "state-machine/dist/state-machine.js" {
         interface Config {
             transitions: string[] | Transition[];
             handlers: Handlers;
+            initial: string;
         }
 
         class StateMachine {

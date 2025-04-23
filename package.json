@@ -31,7 +31,9 @@
         "test:prod:watch": "MODE=prod wtr --watch",
         "codegen": "node ./templates/generate.js "
     },
-    "dependencies": {},
+    "dependencies": {
+        "@turf/circle": "^7.2.0"
+    },
     "devDependencies": {
         "@mapbox/mapbox-gl-draw": "^1.5.0",
         "@mapbox/togeojson": "^0.16.2",
@@ -55,6 +57,7 @@
         "@types/leaflet": "^1.9.0",
         "@types/lodash-es": "^4.17.6",
         "@types/mapbox__mapbox-gl-draw": "^1.4.8",
+        "@types/object-hash": "^3.0.6",
         "@types/uuid": "^8.3.4",
         "@typescript-eslint/eslint-plugin": "^5.59.2",
         "@typescript-eslint/parser": "^5.59.2",
@@ -81,6 +84,7 @@
         "luxon": "^3.5.0",
         "mapbox-gl": "^3.11.0",
         "npm-watch": "^0.13.0",
+        "object-hash": "^3.0.0",
         "prettier": "^3.3.3",
         "prettier-plugin-go-template": "^0.0.15",
         "prettier-plugin-organize-imports": "^4.1.0",

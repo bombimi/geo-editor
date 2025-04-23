@@ -36,7 +36,7 @@ export abstract class FsmEditorMode extends EditorBaseMode {
         this._fsm?.do("mouseup", e);
     }
 
-    protected override _onMouseMove(e: MapMouseEvent): void {
-        this._fsm?.do("mouse_move", e);
+    protected override _onMouseMove(e: MapMouseEvent, feature?: Feature): void {
+        this._fsm?.do("mouse_move", e, feature);
     }
 }

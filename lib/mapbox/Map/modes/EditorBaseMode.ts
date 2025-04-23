@@ -7,6 +7,7 @@ import { getFeatureAtScreenLocation } from "./Helpers";
 
 export abstract class EditorBaseMode extends InteractionMode {
     protected _dirty = true;
+    protected _hoveredFeatureId?: any;
 
     constructor(map: MapboxMap, geoSource: GeoJsonSource) {
         super(map, geoSource);
@@ -35,20 +36,38 @@ export abstract class EditorBaseMode extends InteractionMode {
     protected _onEscapePressed() {}
     protected _onEnterPressed() {}
     protected _onMouseUp(_e: MapMouseEvent) {}
-    protected _onMouseMove(_e: MapMouseEvent) {}
+    protected _onMouseMove(_e: MapMouseEvent, _feature?: Feature) {}
+    protected _onMouseLeave(_e: MapMouseEvent) {}
 
     //-------------------------------------------------------------------------
     // InteractionMode methods
     //-------------------------------------------------------------------------
     public override onMouseMove(e: MapMouseEvent): void {
         console.assert(this.isActive, "LineEditorMode is not active");
+
+        if (this._hoveredFeatureId) {
+            this._geoSource.setSelectionState(this._hoveredFeatureId, false);
+            this._hoveredFeatureId = undefined;
+            this._setCursor();
+        }
+
         const feature = getFeatureAtScreenLocation(this._geoSource, e.point);
         if (feature) {
+            this._hoveredFeatureId = feature.id;
+            this._geoSource.setSelectionState(
+                this._hoveredFeatureId as number,
+                true
+            );
+
             this._setCursor("pointer");
         } else {
             this._setCursor();
         }
-        this._onMouseMove(e);
+        this._onMouseMove(e, feature);
+    }
+
+    public override onMouseLeave(e: MapMouseEvent): void {
+        this._onMouseLeave(e);
     }
 
     public override onMouseDown(e: MapMouseEvent): void {
@@ -57,10 +76,10 @@ export abstract class EditorBaseMode extends InteractionMode {
         if (feature) {
             switch (feature.properties!.__line_editor_type) {
                 case "VERTEX":
-                    this._onMidpointSelected(feature);
+                    this._onVertexSelected(feature);
                     break;
                 case "MIDPOINT":
-                    this._onVertexSelected(feature);
+                    this._onMidpointSelected(feature);
                     break;
             }
         } else {

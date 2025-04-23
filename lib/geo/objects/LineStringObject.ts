@@ -8,13 +8,17 @@ export class LineStringObject extends GeoObject {
         if (feature.geometry.type !== "LineString") {
             throw new Error("Feature geometry must be of type LineString.");
         }
-        super(feature, guid);
+        super("LineString", feature, guid);
         this.updateProperty(
-            new DocumentProperty("__meta_num_points", this._getCoordinates().length, {
-                type: "number",
-                readonly: true,
-                displayName: "Number of Points",
-            })
+            new DocumentProperty(
+                "__meta_num_points",
+                this._getCoordinates().length,
+                {
+                    type: "number",
+                    readonly: true,
+                    displayName: "Number of Points",
+                }
+            )
         );
         this.updateProperty(
             new DocumentProperty("__meta_length", this.totalLength, {
@@ -32,7 +36,10 @@ export class LineStringObject extends GeoObject {
 
     public override move(deltaLat: number, deltaLon: number): void {
         this._setCoordinates(
-            this._getCoordinates().map(([lon, lat]) => [lon + deltaLon, lat + deltaLat])
+            this._getCoordinates().map(([lon, lat]) => [
+                lon + deltaLon,
+                lat + deltaLat,
+            ])
         );
     }
 

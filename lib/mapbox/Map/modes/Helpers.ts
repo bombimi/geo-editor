@@ -27,7 +27,7 @@ export function makePoint(
 export function getFeatureAtScreenLocation(
     geoSource: GeoJsonSource,
     point: MapboxGLPoint,
-    includeFeatures: EDITOR_FEATURE_TYPE[] = ["VERTEX", "MIDPOINT", "MAIN_LINE"]
+    includeFeatures: EDITOR_FEATURE_TYPE[] = ["MIDPOINT", "VERTEX", "MAIN_LINE"]
 ): Feature | undefined {
     let features = geoSource.featuresAtScreenLocation(point);
     let result: Feature | undefined = undefined;

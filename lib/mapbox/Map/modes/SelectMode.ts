@@ -43,22 +43,17 @@ export class SelectMode extends InteractionMode {
 
         if (this._map.mapboxGL) {
             if (this._hoveredFeatureId !== undefined) {
-                this._map.mapboxGL.setFeatureState(
-                    {
-                        source: "map-data",
-                        id: this._hoveredFeatureId as number,
-                    },
-                    {
-                        selected: this._map.selectionSet.includes(
-                            this._geoSource.featureGuidFromId(
-                                this._hoveredFeatureId as number
-                            )!
-                        ),
-                    }
+                this._geoSource.setSelectionState(
+                    this._hoveredFeatureId as number,
+                    this._map.selectionSet.includes(
+                        this._geoSource.featureGuidFromId(
+                            this._hoveredFeatureId as number
+                        )!
+                    )
                 );
             }
             this._hoveredFeatureId = undefined;
-            this._map.mapboxGL.getCanvas().style.cursor = "";
+            this._setCursor();
         }
     }
 
@@ -70,22 +65,20 @@ export class SelectMode extends InteractionMode {
 
         if (this._map.mapboxGL) {
             if (this._hoveredFeatureId) {
-                this._map.mapboxGL.setFeatureState(
-                    { source: "map-data", id: this._hoveredFeatureId },
-                    { selected: false }
+                this._geoSource.setSelectionState(
+                    this._hoveredFeatureId,
+                    false
                 );
                 this._hoveredFeatureId = undefined;
             }
             if (features && features.length) {
                 this._hoveredFeatureId = features[0].id;
-                this._map.mapboxGL.setFeatureState(
-                    {
-                        source: "map-data",
-                        id: this._hoveredFeatureId as number,
-                    },
-                    { selected: true }
+                this._geoSource.setSelectionState(
+                    this._hoveredFeatureId as number,
+                    true
                 );
-                this._map.mapboxGL.getCanvas().style.cursor = "pointer";
+
+                this._setCursor("pointer");
             }
             // // this._map.getCanvas().style.cursor = features && features.length ? "pointer" : "";
         }

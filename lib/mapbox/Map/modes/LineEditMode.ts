@@ -57,6 +57,8 @@ export class LineEditMode extends FsmEditorMode {
         this._lineFeature.properties!.__line_editor_type = "MAIN_LINE";
 
         this._fsm = new StateMachine({
+            initial: "addPoint",
+
             transitions: [
                 // add points
                 "map_selected : addPoint > addPoint",
@@ -87,22 +89,22 @@ export class LineEditMode extends FsmEditorMode {
 
                 "addPoint@vertex_selected": (
                     _event: string,
-                    fsm: StateMachine,
+                    _fsm: StateMachine,
                     feature: Feature
                 ) => {
                     console.log("LineEditorMode: addPoint:vertex_selected");
 
                     // clicking on the current end vertex completes the edit
-                    const overIndex = feature.properties!.__line_editor_index;
-                    if (overIndex !== undefined) {
-                        if (
-                            overIndex ===
-                            this._lineFeature.geometry.coordinates.length - 1
-                        ) {
-                            fsm.do("enterPressed");
-                            return;
-                        }
-                    }
+                    // const overIndex = feature.properties!.__line_editor_index;
+                    // if (overIndex !== undefined) {
+                    //     if (
+                    //         overIndex ===
+                    //         this._lineFeature.geometry.coordinates.length - 1
+                    //     ) {
+                    //         fsm.do("enterPressed");
+                    //         return;
+                    //     }
+                    // }
 
                     this._currentFeatureIndex =
                         feature.properties!.__line_editor_index;

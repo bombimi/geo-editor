@@ -38,6 +38,38 @@ const MapLayers: any[] = [
         },
         filter: ["==", ["geometry-type"], "LineString"],
     },
+
+    {
+        id: "line-select",
+        type: "line",
+        source: "map-data",
+        paint: {
+            "line-color": "yellow",
+            "line-width": 8,
+            "line-opacity": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                DEFAULT_FILL_OPACITY,
+                0,
+            ],
+        },
+        filter: ["==", ["geometry-type"], "LineString"],
+    },
+    {
+        id: "fill-select",
+        type: "fill",
+        source: "map-data",
+        paint: {
+            "fill-color": DEFAULT_SELECTION_COLOR,
+            "fill-opacity": [
+                "case",
+                ["boolean", ["feature-state", "selected"], false],
+                DEFAULT_FILL_OPACITY,
+                0,
+            ],
+        },
+        filter: ["==", ["geometry-type"], "Polygon"],
+    },
     {
         id: "fill-point",
         type: "circle",
@@ -69,37 +101,6 @@ const MapLayers: any[] = [
             ],
         },
         filter: ["==", ["geometry-type"], "Point"],
-    },
-    {
-        id: "line-select",
-        type: "line",
-        source: "map-data",
-        paint: {
-            "line-color": "yellow",
-            "line-width": 8,
-            "line-opacity": [
-                "case",
-                ["boolean", ["feature-state", "selected"], false],
-                DEFAULT_FILL_OPACITY,
-                0,
-            ],
-        },
-        filter: ["==", ["geometry-type"], "LineString"],
-    },
-    {
-        id: "fill-select",
-        type: "fill",
-        source: "map-data",
-        paint: {
-            "fill-color": DEFAULT_SELECTION_COLOR,
-            "fill-opacity": [
-                "case",
-                ["boolean", ["feature-state", "selected"], false],
-                DEFAULT_FILL_OPACITY,
-                0,
-            ],
-        },
-        filter: ["==", ["geometry-type"], "Polygon"],
     },
 ];
 

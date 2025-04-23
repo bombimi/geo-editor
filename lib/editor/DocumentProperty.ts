@@ -1,6 +1,11 @@
+import { WellKnownProperties } from "geo/WellKnownProperties";
 import { cloneDeep } from "lodash-es";
 
-export type DocumentPropertyType = "color" | "string" | "number" | "number-array";
+export type DocumentPropertyType =
+    | "color"
+    | "string"
+    | "number"
+    | "number-array";
 export type DocumentPropertyUnits = "meters";
 
 export type DocumentPropertyMetadata = {
@@ -17,16 +22,43 @@ export type DocumentPropertyMetadata = {
     group?: string; // Group for organizing properties (if applicable)
 };
 
+export function getWellKnownPropertiesArray() {
+    return Object.entries(WellKnownProperties).map(
+        ([key, value]) => new DocumentProperty(key, value.default, value)
+    );
+}
+
+export function getPropertyMetadata(name: string): DocumentPropertyMetadata {
+    return WellKnownProperties[name] ?? { type: "string", displayName: name };
+}
+
 export class DocumentProperty {
+    private _metadata: DocumentPropertyMetadata;
+
     constructor(
         private _name: string,
         private _value: any,
-        private _metadata: DocumentPropertyMetadata
-    ) {}
+        metadata?: DocumentPropertyMetadata
+    ) {
+        if (!metadata) {
+            metadata = WellKnownProperties[_name];
+            if (!metadata) {
+                metadata = {
+                    type: "string",
+                    displayName: _name,
+                };
+            }
+        }
+        this._metadata = metadata;
+    }
 
     // Create a clone of the property with the same name, type, and value
     public clone(): DocumentProperty {
-        return new DocumentProperty(this._name, cloneDeep(this._value), cloneDeep(this._metadata));
+        return new DocumentProperty(
+            this._name,
+            cloneDeep(this._value),
+            cloneDeep(this._metadata)
+        );
     }
 
     public serialize(): any {

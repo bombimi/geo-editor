@@ -6,16 +6,15 @@ import {
 } from "../editor/DocumentObject";
 import {
     DocumentProperty,
-    DocumentPropertyMetadata,
+    getPropertyMetadata,
 } from "../editor/DocumentProperty";
-import { WellKnownProperties } from "./WellKnownProperties";
-
-function getPropertyMetadata(name: string): DocumentPropertyMetadata {
-    return WellKnownProperties[name] ?? { type: "string" };
-}
+import {} from "./WellKnownProperties";
 
 export abstract class GeoObject extends DocumentObject {
+    protected _featureIsDirty = true;
+
     public constructor(
+        protected _type: string,
         protected _feature: Feature,
         guid?: string
     ) {
@@ -38,12 +37,11 @@ export abstract class GeoObject extends DocumentObject {
         this.onPropertyChanged.add((e: DocumentPropertyEvent) =>
             this._upsertProperty(e.property.name, e.property.value)
         );
-        this.onPropertyRemoved.add(
-            (e: DocumentPropertyEvent) =>
-                delete this._feature.properties![e.property.name]
-        );
+        this.onPropertyRemoved.add((e: DocumentPropertyEvent) => {
+            delete this._feature.properties![e.property.name];
+        });
 
-        super.init(_feature.geometry.type, properties, guid);
+        super.init(_type, properties, guid);
     }
 
     public updateFeature(feature: Feature): void {
@@ -56,7 +54,7 @@ export abstract class GeoObject extends DocumentObject {
     }
 
     public override serialize() {
-        return this._feature;
+        return this.feature;
     }
 
     public override get displayType() {
@@ -69,7 +67,13 @@ export abstract class GeoObject extends DocumentObject {
         this._feature.properties![name] = value;
     }
 
+    protected _updateFeature(): void {}
+
     public get feature(): Feature {
+        if (this._featureIsDirty) {
+            this._updateFeature();
+            this._featureIsDirty = false;
+        }
         return this._feature;
     }
 }

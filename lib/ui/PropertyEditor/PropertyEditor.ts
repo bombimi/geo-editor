@@ -13,9 +13,11 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
-import { WellKnownPropertiesArray } from "geo/WellKnownProperties";
 import { DocumentObject } from "../../editor/DocumentObject";
-import { DocumentProperty } from "../../editor/DocumentProperty";
+import {
+    DocumentProperty,
+    getWellKnownPropertiesArray,
+} from "../../editor/DocumentProperty";
 import { SetPropertyCommand } from "../../editor/commands/SetPropertyCommand";
 import { styles } from "./PropertyEditor.style";
 
@@ -44,7 +46,9 @@ function getPropertiesByGroup(
             const groups = prop.metadata.group.split(",").map((g) => g.trim());
 
             for (const group of groups) {
-                let childNode = currentNode.children.find((child) => child.group === group);
+                let childNode = currentNode.children.find(
+                    (child) => child.group === group
+                );
 
                 if (!childNode) {
                     childNode = { group, children: [], items: [] };
@@ -214,7 +218,9 @@ export class PropertyEditor extends EditorElement {
                     let value = e.target.value.trim();
                     value = value.replace(/\s+/g, "");
 
-                    const numbers = value.split(",").map((v: string) => parseFloat(v));
+                    const numbers = value
+                        .split(",")
+                        .map((v: string) => parseFloat(v));
                     if (numbers.some((n: number) => isNaN(n))) {
                         return;
                     }
@@ -283,7 +289,10 @@ export class PropertyEditor extends EditorElement {
         click: (item: DocumentProperty) => void
     ): TemplateResult {
         // exclude the properties that are already in the object
-        const grouped = getPropertiesByGroup(WellKnownPropertiesArray, keep);
+        const grouped = getPropertiesByGroup(
+            getWellKnownPropertiesArray(),
+            keep
+        );
         return html` <sl-dropdown hoist>
             <sl-icon-button slot="trigger" name="${icon}"></sl-icon-button>
             <sl-menu> ${this._createAddDropdownAux(grouped, click)} </sl-menu>
@@ -318,14 +327,24 @@ export class PropertyEditor extends EditorElement {
                 html`<sl-menu-item>
                     ${node.group === "root"
                         ? html`${child.group}<sl-menu slot="submenu"
-                                  >${this._createAddDropdownAux(child, click)}</sl-menu
+                                  >${this._createAddDropdownAux(
+                                      child,
+                                      click
+                                  )}</sl-menu
                               >`
-                        : html`<sl-menu>${this._createAddDropdownAux(child, click)}</sl-menu>`}
+                        : html`<sl-menu
+                              >${this._createAddDropdownAux(
+                                  child,
+                                  click
+                              )}</sl-menu
+                          >`}
                 </sl-menu-item>`
         )}
         ${node.items.map(
             (item) =>
-                html`<sl-menu-item .value=${item.displayName!} @click=${() => click(item)}
+                html`<sl-menu-item
+                    .value=${item.displayName!}
+                    @click=${() => click(item)}
                     >${item.displayName}</sl-menu-item
                 >`
         )}`;
@@ -337,7 +356,8 @@ export class PropertyEditor extends EditorElement {
                 <header class="header">
                     <span>Properties</span>
                     <div class="header-controls">
-                        ${this._removePropertyDropdown}${this._addPropertyDropdown}
+                        ${this._removePropertyDropdown}${this
+                            ._addPropertyDropdown}
                     </div>
                 </header>
                 <div class="main">
@@ -345,7 +365,11 @@ export class PropertyEditor extends EditorElement {
                     <div class="two-column-grid">
                         ${this._mergedProperties.map(
                             (property) => html`
-                                <span class=${classMap({ readonly: property.readonly })}>
+                                <span
+                                    class=${classMap({
+                                        readonly: property.readonly,
+                                    })}
+                                >
                                     ${property.displayName}
                                 </span>
                                 ${this._renderProperty(property)}

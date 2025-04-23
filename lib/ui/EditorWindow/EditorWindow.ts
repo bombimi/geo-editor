@@ -99,7 +99,7 @@ const EditorWindowModes: ModeT[] = [
         icon: "circle",
         iconset: "default",
         mode: "draw-circle",
-        enabled: false,
+        enabled: true,
         description: "Create circles",
     },
 ];

@@ -6,12 +6,14 @@ import { styles } from "./MapboxMap.style";
 import { merge } from "lodash-es";
 import mapboxgl, { Map as MapboxGLMap, MapMouseEvent } from "mapbox-gl";
 
+import { checkIsCircle } from "geo/objects/CircleObject";
 import { Feature } from "geojson";
 import { Location } from "../../geo/GeoJson";
 import { BaseElement } from "../../ui-lib/BaseElement";
 import { watch } from "../../ui-utils/watch";
 import { GeoJsonSource } from "./GeoJsonSource";
 import { InteractionMode } from "./InteractionMode";
+import { CircleEditMode } from "./modes/CircleEditMode";
 import { CreatePointMode } from "./modes/CreatePointMode";
 import { EditMode } from "./modes/EditMode";
 import { LineEditMode } from "./modes/LineEditMode";
@@ -126,6 +128,10 @@ export class MapboxMap extends BaseElement {
     }
 
     private _getEditModeForFeature(feature: GeoJSON.Feature) {
+        if (checkIsCircle(feature)) {
+            return "draw-circle";
+        }
+
         switch (feature.geometry.type) {
             case "Point":
                 return "move-feature";
@@ -209,9 +215,9 @@ export class MapboxMap extends BaseElement {
                 return new CreatePointMode(this, this._geoLayer);
             case "draw-line-string":
                 return new LineEditMode(this, this._geoEditLayer, feature);
-            case "draw-polygon":
-                return new SelectMode(this, this._geoLayer);
             case "draw-circle":
+                return new CircleEditMode(this, this._geoEditLayer, feature);
+            case "draw-polygon":
                 return new SelectMode(this, this._geoLayer);
             case "draw-rectangle":
                 return new SelectMode(this, this._geoLayer);
@@ -272,28 +278,6 @@ export class MapboxMap extends BaseElement {
         this._geoLayer?.setSelectionSet(this.selectionSet);
     }
 
-    private _geoJsonSourceEvent(
-        _sourceName: string,
-        eventName: string,
-        e: MapMouseEvent
-    ) {
-        if (this._interactionMode) {
-            switch (eventName) {
-                case "mousemove":
-                    this._onMouseMove(e);
-                    break;
-                case "mouseleave":
-                    this._onMouseLeave(e);
-                    break;
-                case "click":
-                    this._onClick(e);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
     //---------------------------------------------------------------
     // Initialization
     //---------------------------------------------------------------
@@ -348,16 +332,8 @@ export class MapboxMap extends BaseElement {
             }
 
             this.mapboxGL.on("load", () => {
-                this._geoLayer = new GeoJsonSource(
-                    this,
-                    "map-data",
-                    this._geoJsonSourceEvent.bind(this)
-                );
-                this._geoEditLayer = new GeoJsonSource(
-                    this,
-                    "map-edit",
-                    this._geoJsonSourceEvent.bind(this)
-                );
+                this._geoLayer = new GeoJsonSource(this, "map-data");
+                this._geoEditLayer = new GeoJsonSource(this, "map-edit");
                 resolve();
             });
         });
