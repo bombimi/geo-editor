@@ -63,6 +63,13 @@ export class CircleObject extends GeoObject {
         });
     }
 
+    public override updateFeature(feature: Feature): void {
+        const newFeature = new CircleObject(feature);
+        this.center = newFeature.center;
+        this.radius = newFeature.radius;
+        this.onChanged.raise(this);
+    }
+
     public get radius(): number {
         return this.getProperty(CIRCLE_RADIUS_PROPERTY)?.value;
     }
@@ -83,16 +90,10 @@ export class CircleObject extends GeoObject {
 
     public set center(value: number[]) {
         this.updateProperty(
-            new DocumentProperty(CIRCLE_LNG_PROPERTY, value[0], {
-                type: "number",
-                readonly: true,
-            })
+            new DocumentProperty(CIRCLE_LNG_PROPERTY, value[0])
         );
         this.updateProperty(
-            new DocumentProperty(CIRCLE_LAT_PROPERTY, value[1], {
-                type: "number",
-                readonly: true,
-            })
+            new DocumentProperty(CIRCLE_LAT_PROPERTY, value[1])
         );
         this._featureIsDirty = true;
     }

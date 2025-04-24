@@ -1,13 +1,16 @@
 import { Command, CommandBaseOptions } from "editor/Command";
 import { Document } from "editor/Document";
 import { Factory } from "geo/objects/Factory";
+import { getFeatureDisplayName } from "geo/Utils";
 import { Feature } from "geojson";
 
 export class CreateFeatureCommand extends Command {
     private _feature: Feature;
     private _featureGuid?: string;
 
-    constructor(args: CommandBaseOptions & { feature: Feature; featureGuid?: string }) {
+    constructor(
+        args: CommandBaseOptions & { feature: Feature; featureGuid?: string }
+    ) {
         super(args);
         this._feature = args.feature;
         this._featureGuid = args.featureGuid;
@@ -18,7 +21,7 @@ export class CreateFeatureCommand extends Command {
     }
 
     public override get description(): string {
-        return `Create ${this._feature.geometry.type}`;
+        return `Create ${getFeatureDisplayName(this._feature)}`;
     }
 
     public override do(doc: Document): void {

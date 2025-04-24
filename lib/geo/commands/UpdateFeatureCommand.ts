@@ -6,6 +6,7 @@ import {
     saveDocumentObject,
 } from "editor/DocumentObjectFactory";
 import { GeoObject } from "geo/GeoObject";
+import { getFeatureDisplayName } from "geo/Utils";
 import { Feature } from "geojson";
 
 export class UpdateFeatureCommand extends Command {
@@ -28,7 +29,7 @@ export class UpdateFeatureCommand extends Command {
     }
 
     public override get description(): string {
-        return `Update ${this._feature.geometry.type}`;
+        return `Update  ${getFeatureDisplayName(this._feature)}`;
     }
 
     public override do(doc: Document): void {

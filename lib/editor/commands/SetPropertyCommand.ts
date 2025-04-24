@@ -21,7 +21,10 @@ export class SetPropertyCommand extends Command {
         }
         if (args.oldProperties) {
             for (const op of args.oldProperties) {
-                this._oldProps.set(op.guid, DocumentProperty.deserialize(op.property));
+                this._oldProps.set(
+                    op.guid,
+                    DocumentProperty.deserialize(op.property)
+                );
             }
         }
     }
@@ -31,7 +34,7 @@ export class SetPropertyCommand extends Command {
     }
 
     public override get description(): string {
-        return `Set property '${this._prop.name}' to ${this._prop.value}`;
+        return `Set property '${this._prop.metadata.displayName}' to ${this._prop.value}`;
     }
 
     public do(document: Document): void {
@@ -68,9 +71,11 @@ export class SetPropertyCommand extends Command {
     }
 
     public override serialize() {
-        const oldProperties = Array.from(this._oldProps.entries()).map(([guid, prop]) => {
-            return { guid, property: prop?.serialize() };
-        });
+        const oldProperties = Array.from(this._oldProps.entries()).map(
+            ([guid, prop]) => {
+                return { guid, property: prop?.serialize() };
+            }
+        );
 
         return Object.assign(super.serialize(), {
             property: this._prop.serialize(),
