@@ -1,3 +1,4 @@
+import { cloneDeep } from "lodash-es";
 import { DocumentObject } from "./DocumentObject";
 
 export type SavedDocumentObject = {
@@ -16,14 +17,18 @@ export function registerDocumentObject(
     factory.set(name, factoryFunc);
 }
 
-export function saveDocumentObject(object: DocumentObject): SavedDocumentObject {
+export function saveDocumentObject(
+    object: DocumentObject
+): SavedDocumentObject {
     return {
         type: object.type,
-        payload: object.serialize(),
+        payload: cloneDeep(object.serialize()),
     };
 }
 
-export function createDocumentObject(saved: SavedDocumentObject): DocumentObject {
+export function createDocumentObject(
+    saved: SavedDocumentObject
+): DocumentObject {
     const factoryFunc = factory.get(saved.type);
     if (factoryFunc) {
         return factoryFunc(saved.payload);

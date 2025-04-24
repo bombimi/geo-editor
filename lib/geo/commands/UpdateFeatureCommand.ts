@@ -13,10 +13,14 @@ export class UpdateFeatureCommand extends Command {
     public _savedObject?: SavedDocumentObject;
 
     constructor(
-        args: CommandBaseOptions & { feature: Feature; featureGuid: string }
+        args: CommandBaseOptions & {
+            feature: Feature;
+            savedObject?: SavedDocumentObject;
+        }
     ) {
         super(args);
         this._feature = args.feature;
+        this._savedObject = args.savedObject;
     }
 
     public override get name(): string {

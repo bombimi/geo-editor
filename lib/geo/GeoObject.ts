@@ -1,4 +1,5 @@
 import { Feature } from "geojson";
+import { cloneDeep } from "lodash-es";
 import { camelCaseToReadable } from "ui-lib/Utils";
 import {
     DocumentObject,
@@ -54,7 +55,7 @@ export abstract class GeoObject extends DocumentObject {
     }
 
     public override serialize() {
-        return this.feature;
+        return cloneDeep(this.feature);
     }
 
     public override get displayType() {

@@ -79,16 +79,22 @@ export class GeoDocumentRenderer extends EditorElement {
                     this._setGeo();
                 }
             });
-            this._setGeo();
+            this._setGeo({ fitToBounds: true });
         }
     }
 
-    private _setGeo() {
+    private _setGeo(options: { fitToBounds?: boolean } = {}) {
         const geo = (this._editor?.document as GeoDocument).geoJson;
         if (this._map && geo) {
             this._map.setGeoJsonLayer(geo.features);
             this._bounds = geo.bbox();
-            this.fitToBounds();
+
+            if (
+                options.fitToBounds !== undefined &&
+                options.fitToBounds === true
+            ) {
+                this.fitToBounds();
+            }
         }
     }
 
@@ -120,7 +126,6 @@ export class GeoDocumentRenderer extends EditorElement {
                             new UpdateFeatureCommand({
                                 selectionSet: [],
                                 feature: e.detail as Feature,
-                                featureGuid: e.detail.properties.__meta_guid,
                             })
                         );
                     }

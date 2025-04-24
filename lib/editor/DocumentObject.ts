@@ -1,4 +1,4 @@
-import { orderBy } from "lodash-es";
+import { cloneDeep, orderBy } from "lodash-es";
 import { DocumentProperty } from "./DocumentProperty";
 import { EditorEvent } from "./EditorEvent";
 import { uuidv4 } from "./Utils";
@@ -68,8 +68,12 @@ export class DocumentObject {
     public serialize(): any {
         return {
             guid: this.guid,
-            properties: this._properties.map((prop) => prop.serialize()),
-            children: this._children.map((child) => child.serialize()),
+            properties: this._properties.map((prop) =>
+                cloneDeep(prop.serialize())
+            ),
+            children: this._children.map((child) =>
+                cloneDeep(child.serialize())
+            ),
         };
     }
 
