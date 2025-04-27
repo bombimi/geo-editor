@@ -161,22 +161,24 @@ export class LineEditMode extends FsmEditorMode {
                 createFeature: (_e: string, fsm: StateMachine) => {
                     console.log("LineEditorMode: createFeature");
 
-                    if (this._existingFeature) {
-                        this._map._dispatchEvent(
-                            "update-feature",
-                            lineString(
-                                this._lineFeature.geometry.coordinates,
-                                cloneDeep(this._existingFeature.properties)
-                            )
-                        );
-                    } else {
-                        this._map._dispatchEvent(
-                            "create-feature",
-                            lineString(
-                                this._lineFeature.geometry.coordinates,
-                                cloneDeep(DefaultLineStyle)
-                            )
-                        );
+                    if (this._lineFeature.geometry.coordinates.length >= 2) {
+                        if (this._existingFeature) {
+                            this._map._dispatchEvent(
+                                "update-feature",
+                                lineString(
+                                    this._lineFeature.geometry.coordinates,
+                                    cloneDeep(this._existingFeature.properties)
+                                )
+                            );
+                        } else {
+                            this._map._dispatchEvent(
+                                "create-feature",
+                                lineString(
+                                    this._lineFeature.geometry.coordinates,
+                                    cloneDeep(DefaultLineStyle)
+                                )
+                            );
+                        }
                     }
                     fsm.do("escapePressed");
                 },
