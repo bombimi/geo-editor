@@ -46,6 +46,28 @@ export const WellKnownProperties: { [key: string]: DocumentPropertyMetadata } =
             displayName: "Circle Lng",
         },
 
+        // Rectangle objects
+        __geo_editor_rectangle_nw_lat: {
+            group: "Rectangle",
+            type: "number",
+            displayName: "Rectangle NW Lat",
+        },
+        __geo_editor_rectangle_nw_lng: {
+            group: "Rectangle",
+            type: "number",
+            displayName: "Rectangle NW Lng",
+        },
+        __geo_editor_rectangle_se_lat: {
+            group: "Rectangle",
+            type: "number",
+            displayName: "Rectangle SE Lat",
+        },
+        __geo_editor_rectangle_se_lng: {
+            group: "Rectangle",
+            type: "number",
+            displayName: "Rectangle SE Lng",
+        },
+
         // Mapbox Simple Style Specification v1.1.0.
         // https://github.com/mapbox/simplestyle-spec/tree/master/1.1.0
         //TODO: complete the rest of the properties

@@ -94,18 +94,6 @@ export class LineEditMode extends FsmEditorMode {
                 ) => {
                     console.log("LineEditorMode: addPoint:vertex_selected");
 
-                    // clicking on the current end vertex completes the edit
-                    // const overIndex = feature.properties!.__line_editor_index;
-                    // if (overIndex !== undefined) {
-                    //     if (
-                    //         overIndex ===
-                    //         this._lineFeature.geometry.coordinates.length - 1
-                    //     ) {
-                    //         fsm.do("enterPressed");
-                    //         return;
-                    //     }
-                    // }
-
                     this._currentFeatureIndex =
                         feature.properties!.__line_editor_index;
                     this._selectedVertexPosition = undefined;

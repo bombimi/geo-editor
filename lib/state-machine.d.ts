@@ -20,6 +20,7 @@ declare module "state-machine/dist/state-machine.js" {
             constructor(config: Config);
             do(event: string, ...args: any[]): boolean;
             go(state: string, force = false): boolean;
+            reset(initial: string): StateMachine;
         }
     }
 

@@ -4,6 +4,7 @@ import { checkIsCircle, CircleObject } from "./CircleObject";
 import { LineStringObject } from "./LineStringObject";
 import { PointObject } from "./PointObject";
 import { PolygonObject } from "./PolygonObject";
+import { checkIsRectangle, RectangleObject } from "./RectangleObject";
 
 export class Factory {
     public static createPoint(
@@ -24,6 +25,9 @@ export class Factory {
     ): GeoObject {
         if (checkIsCircle(feature)) {
             return new CircleObject(feature, guid);
+        }
+        if (checkIsRectangle(feature)) {
+            return new RectangleObject(feature, guid);
         }
         return new PolygonObject(feature, guid);
     }

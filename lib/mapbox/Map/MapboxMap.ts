@@ -7,6 +7,7 @@ import { merge } from "lodash-es";
 import mapboxgl, { Map as MapboxGLMap, MapMouseEvent } from "mapbox-gl";
 
 import { checkIsCircle } from "geo/objects/CircleObject";
+import { checkIsRectangle } from "geo/objects/RectangleObject";
 import { Feature } from "geojson";
 import { Location } from "../../geo/GeoJson";
 import { BaseElement } from "../../ui-lib/BaseElement";
@@ -17,6 +18,7 @@ import { CircleEditMode } from "./modes/CircleEditMode";
 import { CreatePointMode } from "./modes/CreatePointMode";
 import { EditMode } from "./modes/EditMode";
 import { LineEditMode } from "./modes/LineEditMode";
+import { RectangleEditMode } from "./modes/RectangleEditMode";
 import { SelectMode } from "./modes/SelectMode";
 
 export type MapConfig = ReturnType<typeof makeConfig>;
@@ -131,6 +133,9 @@ export class MapboxMap extends BaseElement {
         if (checkIsCircle(feature)) {
             return "draw-circle";
         }
+        if (checkIsRectangle(feature)) {
+            return "draw-rectangle";
+        }
 
         switch (feature.geometry.type) {
             case "Point":
@@ -220,7 +225,7 @@ export class MapboxMap extends BaseElement {
             case "draw-polygon":
                 return new SelectMode(this, this._geoLayer);
             case "draw-rectangle":
-                return new SelectMode(this, this._geoLayer);
+                return new RectangleEditMode(this, this._geoEditLayer, feature);
             case "edit":
                 return new EditMode(this, this._geoLayer);
             default:

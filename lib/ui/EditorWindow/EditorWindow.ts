@@ -92,7 +92,7 @@ const EditorWindowModes: ModeT[] = [
         icon: "rectangle",
         iconset: "app-icons",
         mode: "draw-rectangle",
-        enabled: false,
+        enabled: true,
         description: "Create rectangles",
     },
     {
