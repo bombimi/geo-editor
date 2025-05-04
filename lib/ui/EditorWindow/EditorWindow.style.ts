@@ -14,6 +14,10 @@ export const styles = css`
         background-color: var(--sl-color-neutral-100);
     }
 
+    .editor-window.dropping {
+        opacity: 0.75;
+    }
+
     ds-document-renderer {
         width: 100%;
         display: block;

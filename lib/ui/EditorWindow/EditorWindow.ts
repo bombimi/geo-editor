@@ -115,6 +115,7 @@ export class EditorWindow extends EditorElement {
     @state() protected _deleteEnabled = false;
     @state() protected _currentSelectionSet: string[] = [];
     @state() protected _currentMode: InteractionModes = "select";
+    @state() protected _dropping = false;
 
     @query("ds-document-renderer")
     protected _documentRenderer?: GeoDocumentRenderer;
@@ -370,8 +371,45 @@ export class EditorWindow extends EditorElement {
         return false;
     }
 
+    private _handleDrop(event: Event) {
+        event.preventDefault();
+        const dataTransfer = (event as DragEvent).dataTransfer;
+        if (dataTransfer && dataTransfer.files.length > 0) {
+            const file = dataTransfer.files[0];
+            const provider = getGeoDocumentProviders().find((p) =>
+                p.fileTypes().includes(file.type)
+            );
+            if (provider) {
+                this._openFile(provider, file, file.name, file.type, undefined);
+            } else {
+                console.error("Unsupported file type", file.type);
+            }
+        }
+        this._dropping = false;
+    }
+
+    private _handleDragEnter(event: DragEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this._dropping = true;
+    }
+    private _handleDragLeave(event: DragEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+        this._dropping = false;
+    }
+
     override render() {
-        return html`<div class="editor-window">
+        return html`<div
+            class="${classMap({
+                "editor-window": true,
+                dropping: this._dropping,
+            })}"
+            @dragenter=${(e: DragEvent) => this._handleDragEnter(e)}
+            @dragleave=${(e: DragEvent) => this._handleDragLeave(e)}
+            @dragover=${(e: Event) => e.preventDefault()}
+            @drop=${(e: Event) => this._handleDrop(e)}
+        >
             ${this._document
                 ? html`<ds-document-renderer
                       .editorGuid=${this._editor?.guid}
