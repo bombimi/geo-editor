@@ -40,6 +40,11 @@ jobs:
             # - name: Generate release notes
             #   run: yarn generate-release-notes
 
+            - name: Build
+              env:
+                  NODE_OPTIONS: "--max_old_space_size=4096"
+              run: yarn build:ci
+
             - name: Deploy app
               uses: lbertenasco/s3-deploy@v1
               with:
