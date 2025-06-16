@@ -85,7 +85,7 @@ const EditorWindowModes: ModeT[] = [
         icon: "polygon",
         iconset: "app-icons",
         mode: "draw-polygon",
-        enabled: false,
+        enabled: true,
         description: "Create polygons",
     },
     {
@@ -248,6 +248,9 @@ export class EditorWindow extends EditorElement {
                 );
             }
         }
+        else {
+            this._createNewDoc();
+        }
     }
 
     private async _saveCurrentState() {
@@ -376,13 +379,22 @@ export class EditorWindow extends EditorElement {
         const dataTransfer = (event as DragEvent).dataTransfer;
         if (dataTransfer && dataTransfer.files.length > 0) {
             const file = dataTransfer.files[0];
-            const provider = getGeoDocumentProviders().find((p) =>
-                p.fileTypes().includes(file.type)
-            );
-            if (provider) {
-                this._openFile(provider, file, file.name, file.type, undefined);
-            } else {
-                console.error("Unsupported file type", file.type);
+            const ext = file.name.split(".").pop()?.toLowerCase();
+            if (ext) {
+                const provider = getGeoDocumentProviders().find((p) =>
+                    p.fileTypes().includes(ext)
+                );
+                if (provider) {
+                    this._openFile(
+                        provider,
+                        file,
+                        file.name,
+                        file.type,
+                        undefined
+                    );
+                } else {
+                    console.error("Unsupported file type", file.type);
+                }
             }
         }
         this._dropping = false;
@@ -402,9 +414,9 @@ export class EditorWindow extends EditorElement {
     override render() {
         return html`<div
             class="${classMap({
-                "editor-window": true,
-                dropping: this._dropping,
-            })}"
+            "editor-window": true,
+            dropping: this._dropping,
+        })}"
             @dragenter=${(e: DragEvent) => this._handleDragEnter(e)}
             @dragleave=${(e: DragEvent) => this._handleDragLeave(e)}
             @dragover=${(e: Event) => e.preventDefault()}
@@ -436,14 +448,14 @@ export class EditorWindow extends EditorElement {
                             >
                             <sl-divider></sl-divider>
                             ${getGeoDocumentProviders().map(
-                                (provider) =>
-                                    html`<sl-menu-item
+                    (provider) =>
+                        html`<sl-menu-item
                                         value="open"
                                         @click=${() =>
-                                            this._promptForFile(provider)}
+                                this._promptForFile(provider)}
                                         >${provider.name}</sl-menu-item
                                     >`
-                            )}
+                )}
                         </sl-menu></sl-dropdown
                     >
                     <sl-button size="large" ?disabled=${this._document === null}
@@ -500,19 +512,19 @@ export class EditorWindow extends EditorElement {
                         html`<sl-tooltip content=${mode.description}
                             ><sl-icon-button
                                 class=${classMap({
-                                    active: this._currentMode === mode.mode,
-                                })}
+                            active: this._currentMode === mode.mode,
+                        })}
                                 ?disabled=${!this._isModeEnabled(
-                                    mode,
-                                    this._currentSelectionSet
-                                )}
+                            mode,
+                            this._currentSelectionSet
+                        )}
                                 name=${mode.icon}
                                 library=${ifDefined(mode.iconset)}
                                 @click=${() => {
-                                    this._setMode(
-                                        mode.mode as InteractionModes
-                                    );
-                                }}
+                                this._setMode(
+                                    mode.mode as InteractionModes
+                                );
+                            }}
                             ></sl-icon-button
                         ></sl-tooltip>`
                 )}

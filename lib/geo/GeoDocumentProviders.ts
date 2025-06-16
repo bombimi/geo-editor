@@ -11,7 +11,7 @@ export class GeoDocumentProviderKml extends DocumentProvider {
     }
 
     public fileTypes(): string[] {
-        return ["kml"];
+        return ["kml", "application/vnd.google-earth.kml+xml"];
     }
 
     public async openDocument(blob: Blob, name: string): Promise<Document> {
