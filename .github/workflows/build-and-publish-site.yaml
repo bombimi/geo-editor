@@ -46,10 +46,10 @@ jobs:
                   NODE_OPTIONS: "--max_old_space_size=4096"
               run: yarn build:ci
 
-            # - name: Deploy caveDB app
-            #   uses: lbertenasco/s3-deploy@v1
-            #   with:
-            #       folder: ./.site/cavedb
-            #       bucket: app.cavedb.net
-            #       dist-id: E2TMOYFVU2PLD7
-            #       invalidation: /*
+            - name: Deploy app
+              uses: lbertenasco/s3-deploy@v1
+              with:
+                folder: ./.site/cavedb
+                bucket: editor.cavedb.net
+                dist-id: E2M9QZ6Z0OKB1H
+                invalidation: /*
