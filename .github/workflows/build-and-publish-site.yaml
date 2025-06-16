@@ -10,7 +10,6 @@ jobs:
         env:
             AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            JEKYLL_ENV: production
         steps:
             - uses: actions/checkout@v4
               with:
@@ -41,15 +40,10 @@ jobs:
             # - name: Generate release notes
             #   run: yarn generate-release-notes
 
-            - name: Build
-              env:
-                  NODE_OPTIONS: "--max_old_space_size=4096"
-              run: yarn build:ci
-
             - name: Deploy app
               uses: lbertenasco/s3-deploy@v1
               with:
-                folder: ./.site/cavedb
+                folder: ./site
                 bucket: editor.cavedb.net
                 dist-id: E2M9QZ6Z0OKB1H
                 invalidation: /*
