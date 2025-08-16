@@ -15,13 +15,21 @@ export class GeoDocument extends Document {
 
     public override get sourceFilename(): string | undefined {
         return this.name;
+    }
 
+    public override set sourceFilename(name: string | undefined) {
+        this.name = name ?? "Untitled";
+        this._updateMetaData();
     }
 
     public override get sourceFileType(): string | undefined {
         return this._type;
     }
 
+    public override set sourceFileType(type: string) {
+        this._type = type;
+        this._updateMetaData();
+    }
 
     public get geoJson(): GeoJson | null {
         return new GeoJson({
@@ -61,35 +69,54 @@ export class GeoDocument extends Document {
                 feature.properties.__meta_guid = obj.guid;
             }
         }
+        this._updateMetaData();
+        console.log("Opening GeoDocument", blob);
+    }
+
+    private _updateMetaData() {
         this.updateProperty(
-            new DocumentProperty("__meta_source_filename", this.sourceFilename, {
-                type: "string",
-                readonly: true,
-                displayName: "Source filename",
-            }));
+            new DocumentProperty(
+                "__meta_source_filename",
+                this.sourceFilename,
+                {
+                    type: "string",
+                    readonly: true,
+                    displayName: "Source filename",
+                }
+            )
+        );
         this.updateProperty(
             new DocumentProperty("__meta_source_type", this.sourceFileType, {
                 type: "string",
                 readonly: true,
                 displayName: "Source type",
-            }));
-
-
-        console.log("Opening GeoDocument", blob);
+            })
+        );
     }
 
-    public override async save(fileType: GeoSourceType): Promise<string | undefined> {
+    public override async save(
+        fileType: GeoSourceType
+    ): Promise<string | undefined> {
         // Implement the logic to save the GeoDocument to a Blob
         const geoJson = this.geoJson;
         return geoJson?.save(fileType);
-
     }
 
     public override get name(): string {
         return this._geoJson?.name ?? "Untitled";
     }
 
+    public override set name(name: string) {
+        if (this._geoJson) {
+            this._geoJson.name = name;
+        }
+    }
+
     public override get type(): string {
         return this._type ?? "";
+    }
+
+    public override set type(type: string) {
+        this._type = type;
     }
 }

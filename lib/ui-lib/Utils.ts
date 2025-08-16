@@ -81,33 +81,35 @@ export function showToast(
     return alert.toast();
 }
 
-export async function saveTextToFile(text: string, defaultFileName = 'untitled.txt', types: Array<{
-    description: string,
-    accept: Record<string, string[]>
-}> = [
+export async function saveTextToFile(
+    text: string,
+    defaultFileName = "untitled.txt",
+    types: Array<{
+        description: string;
+        accept: Record<string, string[]>;
+    }> = [
         {
-            description: 'Text Files',
+            description: "Text Files",
             accept: {
-                'text/plain': ['.txt'],
+                "text/plain": [".txt"],
             },
-        }]
-): Promise<boolean> {
+        },
+    ]
+): Promise<string | undefined> {
     try {
         if ((window as any).showSaveFilePicker) {
-
         }
         const fileHandle = await (window as any).showSaveFilePicker({
             suggestedName: defaultFileName,
-            types
+            types,
         });
-
         const writableStream = await fileHandle.createWritable();
         await writableStream.write(text);
         await writableStream.close();
 
-        return true;
+        return fileHandle.name;
     } catch (error) {
-        console.error('Error saving file:', error);
-        return false;
+        console.error("Error saving file:", error);
+        return undefined;
     }
 }

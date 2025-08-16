@@ -218,7 +218,7 @@ export class EditorWindow extends EditorElement {
 
         if (lastAutoSave) {
             lastDoc = lastAutoSave;
-            lastDocMimeType =  "application/json";
+            lastDocMimeType = "application/json";
             docProvider = new GeoDocumentProviderGeoJson().id;
             showToast("Restoring from auto save");
         }
@@ -346,7 +346,7 @@ export class EditorWindow extends EditorElement {
                 const filename =
                     this._document.sourceFilename ??
                     `untitled.${provider.fileExtension}`;
-                success = await saveTextToFile(str, filename, [
+                const saveFilename = await saveTextToFile(str, filename, [
                     {
                         description: `${provider.displayName} Files`,
                         accept: {
@@ -354,6 +354,12 @@ export class EditorWindow extends EditorElement {
                         },
                     },
                 ]);
+
+                if (saveFilename) {
+                    success = true;
+                    this._document.sourceFilename = saveFilename;
+                    this._document.sourceFileType = provider.type;
+                }
             }
 
             if (success) {
@@ -505,9 +511,6 @@ export class EditorWindow extends EditorElement {
                                         >`
                                 )}
                         </sl-menu></sl-dropdown
-                    >
-                    <sl-button size="large" ?disabled=${this._document === null}
-                        >Export</sl-button
                     >
                 </sl-button-group>
             </div>
