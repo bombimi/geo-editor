@@ -122,6 +122,7 @@ export const WellKnownProperties: { [key: string]: DocumentPropertyMetadata } =
             group: "Style",
             type: "string",
             displayName: "Style Hash",
+            default: "",
             readonly: true,
         },
         styleMapHash: {
@@ -130,7 +131,12 @@ export const WellKnownProperties: { [key: string]: DocumentPropertyMetadata } =
             displayName: "Style Map Hash",
             readonly: true,
         },
-        styleUrl: { group: "Style", type: "string", displayName: "Style URL" },
+        styleUrl: {
+            group: "Style",
+            type: "string",
+            displayName: "Style URL",
+            default: "",
+        },
         name: { type: "string", displayName: "Name" },
         fill: {
             type: "color",
