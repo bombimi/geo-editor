@@ -33,7 +33,7 @@ import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
 import { GeoObject } from "geo/GeoObject";
 import { Feature } from "geojson";
 import { InteractionModes } from "mapbox/Map";
-import { showToast } from "ui-lib/Utils";
+import { saveTextToFile, showToast } from "ui-lib/Utils";
 import "../DocumentEditor";
 import "../DocumentHistory";
 
@@ -218,8 +218,7 @@ export class EditorWindow extends EditorElement {
 
         if (lastAutoSave) {
             lastDoc = lastAutoSave;
-            lastDocMimeType = "application/json";
-            lastDocName = "autosave.json";
+            lastDocMimeType =  "application/json";
             docProvider = new GeoDocumentProviderGeoJson().id;
             showToast("Restoring from auto save");
         }
@@ -247,20 +246,21 @@ export class EditorWindow extends EditorElement {
                     undoBufferArgs
                 );
             }
-        }
-        else {
+        } else {
             this._createNewDoc();
         }
     }
 
     private async _saveCurrentState() {
         if (this._editor && this._document) {
-            const saved = await this._document.save();
-            window.localStorage.setItem("lastAutoSave", saved);
-            window.localStorage.setItem(
-                "lastAutoSaveUndoBuffer",
-                JSON.stringify(this._editor.undoBuffer.serialize())
-            );
+            const saved = await this._document.save("geojson");
+            if (saved) {
+                window.localStorage.setItem("lastAutoSave", saved);
+                window.localStorage.setItem(
+                    "lastAutoSaveUndoBuffer",
+                    JSON.stringify(this._editor.undoBuffer.serialize())
+                );
+            }
         }
     }
 
@@ -302,6 +302,7 @@ export class EditorWindow extends EditorElement {
         window.localStorage.setItem("lastDocumentMimeType", mimeType);
         window.localStorage.removeItem("lastAutoSave");
         window.localStorage.removeItem("lastAutoSaveUndoBuffer");
+        this._saveCurrentState();
 
         return this._document;
     }
@@ -327,10 +328,40 @@ export class EditorWindow extends EditorElement {
             new Blob([JSON.stringify(EMPTY_COLLECTION)], {
                 type: "application/json",
             }),
-            "newDocument.json",
-            "application/json",
+            "newDocument.geojson",
+            "application/geo+json",
             undefined
         );
+    }
+
+    private async _saveToFile(provider: DocumentProvider) {
+        if (this._document) {
+            let success = false;
+
+            const str = await provider.saveDocument(
+                this._document,
+                provider.type
+            );
+            if (str) {
+                const filename =
+                    this._document.sourceFilename ??
+                    `untitled.${provider.fileExtension}`;
+                success = await saveTextToFile(str, filename, [
+                    {
+                        description: `${provider.displayName} Files`,
+                        accept: {
+                            [provider.mimeType]: [`.${provider.fileExtension}`],
+                        },
+                    },
+                ]);
+            }
+
+            if (success) {
+                showToast("Saved document");
+            } else {
+                showToast("Failed to save document");
+            }
+        }
     }
 
     private _promptForFile(provider: DocumentProvider) {
@@ -340,8 +371,7 @@ export class EditorWindow extends EditorElement {
         input.type = "file";
         input.multiple = false;
         input.style = "visibility:collapse; display:none";
-        input.accept = `${provider
-            .fileTypes()
+        input.accept = `${provider.canLoadFileTypes
             .map((t) => `.${t}`)
             .join(",")}`;
 
@@ -382,7 +412,7 @@ export class EditorWindow extends EditorElement {
             const ext = file.name.split(".").pop()?.toLowerCase();
             if (ext) {
                 const provider = getGeoDocumentProviders().find((p) =>
-                    p.fileTypes().includes(ext)
+                    p.canLoadFileTypes.includes(ext)
                 );
                 if (provider) {
                     this._openFile(
@@ -414,9 +444,9 @@ export class EditorWindow extends EditorElement {
     override render() {
         return html`<div
             class="${classMap({
-            "editor-window": true,
-            dropping: this._dropping,
-        })}"
+                "editor-window": true,
+                dropping: this._dropping,
+            })}"
             @dragenter=${(e: DragEvent) => this._handleDragEnter(e)}
             @dragleave=${(e: DragEvent) => this._handleDragLeave(e)}
             @dragover=${(e: Event) => e.preventDefault()}
@@ -448,18 +478,33 @@ export class EditorWindow extends EditorElement {
                             >
                             <sl-divider></sl-divider>
                             ${getGeoDocumentProviders().map(
-                    (provider) =>
-                        html`<sl-menu-item
+                                (provider) =>
+                                    html`<sl-menu-item
                                         value="open"
                                         @click=${() =>
-                                this._promptForFile(provider)}
-                                        >${provider.name}</sl-menu-item
+                                            this._promptForFile(provider)}
+                                        >${provider.displayName}</sl-menu-item
                                     >`
-                )}
+                            )}
                         </sl-menu></sl-dropdown
                     >
-                    <sl-button size="large" ?disabled=${this._document === null}
-                        >Save</sl-button
+                    <sl-dropdown
+                        ><sl-button slot="trigger" size="large" caret
+                            >Save</sl-button
+                        >
+                        <sl-menu>
+                            ${getGeoDocumentProviders()
+                                .filter((x) => x.canSaveFileType)
+                                .map(
+                                    (provider) =>
+                                        html`<sl-menu-item
+                                            value="save"
+                                            @click=${async () =>
+                                                this._saveToFile(provider)}
+                                            >${provider.displayName}</sl-menu-item
+                                        >`
+                                )}
+                        </sl-menu></sl-dropdown
                     >
                     <sl-button size="large" ?disabled=${this._document === null}
                         >Export</sl-button
@@ -512,19 +557,19 @@ export class EditorWindow extends EditorElement {
                         html`<sl-tooltip content=${mode.description}
                             ><sl-icon-button
                                 class=${classMap({
-                            active: this._currentMode === mode.mode,
-                        })}
+                                    active: this._currentMode === mode.mode,
+                                })}
                                 ?disabled=${!this._isModeEnabled(
-                            mode,
-                            this._currentSelectionSet
-                        )}
+                                    mode,
+                                    this._currentSelectionSet
+                                )}
                                 name=${mode.icon}
                                 library=${ifDefined(mode.iconset)}
                                 @click=${() => {
-                                this._setMode(
-                                    mode.mode as InteractionModes
-                                );
-                            }}
+                                    this._setMode(
+                                        mode.mode as InteractionModes
+                                    );
+                                }}
                             ></sl-icon-button
                         ></sl-tooltip>`
                 )}

@@ -1,5 +1,6 @@
 import { gpx, kml } from "@mapbox/togeojson";
-
+import tokml from "tokml";
+import togpx from 'togpx';
 import { bbox } from "@turf/bbox";
 import center from "@turf/center";
 import { length } from "@turf/length";
@@ -54,7 +55,7 @@ function makeLocation(lat: number, lon: number) {
 export class GeoJson {
     public name = "";
 
-    constructor(public readonly features: GeoJSON.FeatureCollection) {}
+    constructor(public readonly features: GeoJSON.FeatureCollection) { }
 
     //-----------------------------------------------------------------------------
     // Creating from different formats
@@ -116,6 +117,25 @@ export class GeoJson {
     // Utility functions
     //-----------------------------------------------------------------------------
 
+    // Save to string
+    public save(type: GeoSourceType): string | undefined {
+        switch (type) {
+            case "kml": {
+                return tokml(this.features, {
+                    //TODO: map geojson properties to KML attributes
+                });
+            }
+            case "geojson": {
+                return JSON.stringify(this.features, undefined, 4);
+            }
+            case "gpx": {
+                return togpx(this.features.features);
+            }
+        }
+    }
+
+
+    // Get center of the feature collection
     public center() {
         const c = center(this.features);
         return {
@@ -124,6 +144,7 @@ export class GeoJson {
         };
     }
 
+    // Get the bounding box from the feature collection
     public bbox() {
         if (this.features.features.length === 0) {
             return undefined;
@@ -135,9 +156,8 @@ export class GeoJson {
         } as Bounds;
     }
 
-    /**
-     * Total length of the survey in meters
-     */
+
+    // Total length of the survey in meters
     public totalLength(): number | undefined {
         if (!this.features || this.features.features.length === 0) {
             return undefined;
@@ -156,6 +176,7 @@ export class GeoJson {
         return totalLength;
     }
 
+    // Get the maximum depth of all the lines in the geometry
     public maxDepth(): number | undefined {
         if (!this.features || this.features.features.length === 0) {
             return undefined;

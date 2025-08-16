@@ -99,6 +99,8 @@
         "rollup-plugin-workbox": "^8.1.0",
         "state-machine": "^1.0.4",
         "togeojson": "^0.16.0",
+        "togpx": "^0.5.4",
+        "tokml": "^0.4.0",
         "ts-md5": "^1.2.11",
         "tslib": "^2.8.1",
         "typedoc": "^0.24.6",

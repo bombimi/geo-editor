@@ -1,3 +1,4 @@
+import { DocumentProperty } from "editor/DocumentProperty";
 import { Document } from "../editor/Document";
 import { GeoJson, GeoSourceType, GeoSourceTypes } from "./GeoJson";
 import { GeoObject } from "./GeoObject";
@@ -11,6 +12,16 @@ export class GeoDocument extends Document {
         super();
         super.init("root");
     }
+
+    public override get sourceFilename(): string | undefined {
+        return this.name;
+
+    }
+
+    public override get sourceFileType(): string | undefined {
+        return this._type;
+    }
+
 
     public get geoJson(): GeoJson | null {
         return new GeoJson({
@@ -50,18 +61,28 @@ export class GeoDocument extends Document {
                 feature.properties.__meta_guid = obj.guid;
             }
         }
+        this.updateProperty(
+            new DocumentProperty("__meta_source_filename", this.sourceFilename, {
+                type: "string",
+                readonly: true,
+                displayName: "Source filename",
+            }));
+        this.updateProperty(
+            new DocumentProperty("__meta_source_type", this.sourceFileType, {
+                type: "string",
+                readonly: true,
+                displayName: "Source type",
+            }));
+
 
         console.log("Opening GeoDocument", blob);
     }
 
-    public override async save(): Promise<string> {
+    public override async save(fileType: GeoSourceType): Promise<string | undefined> {
         // Implement the logic to save the GeoDocument to a Blob
-        return JSON.stringify({
-            type: "FeatureCollection",
-            features: this.children.map(
-                (child) => (child as GeoObject).feature
-            ),
-        });
+        const geoJson = this.geoJson;
+        return geoJson?.save(fileType);
+
     }
 
     public override get name(): string {

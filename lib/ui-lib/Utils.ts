@@ -80,3 +80,34 @@ export function showToast(
     document.body.append(alert);
     return alert.toast();
 }
+
+export async function saveTextToFile(text: string, defaultFileName = 'untitled.txt', types: Array<{
+    description: string,
+    accept: Record<string, string[]>
+}> = [
+        {
+            description: 'Text Files',
+            accept: {
+                'text/plain': ['.txt'],
+            },
+        }]
+): Promise<boolean> {
+    try {
+        if ((window as any).showSaveFilePicker) {
+
+        }
+        const fileHandle = await (window as any).showSaveFilePicker({
+            suggestedName: defaultFileName,
+            types
+        });
+
+        const writableStream = await fileHandle.createWritable();
+        await writableStream.write(text);
+        await writableStream.close();
+
+        return true;
+    } catch (error) {
+        console.error('Error saving file:', error);
+        return false;
+    }
+}
