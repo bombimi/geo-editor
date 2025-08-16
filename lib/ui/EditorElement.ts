@@ -1,8 +1,8 @@
 import { property, state } from "lit/decorators.js";
-import { watch } from "../ui-utils/watch";
-import { editorManager } from "../editor/EditorManager";
 import { Editor } from "../editor/Editor";
+import { editorManager } from "../editor/EditorManager";
 import { BaseElement } from "../ui-lib/BaseElement";
+import { watch } from "../ui-utils/watch";
 
 export class EditorElement extends BaseElement {
     @property({ type: String }) editorGuid?: string;
