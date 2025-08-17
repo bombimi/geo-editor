@@ -16,8 +16,10 @@ import { GeoJsonSource } from "./GeoJsonSource";
 import { InteractionMode } from "./InteractionMode";
 import { CircleEditMode } from "./modes/CircleEditMode";
 import { CreatePointMode } from "./modes/CreatePointMode";
-import { EditMode } from "./modes/EditMode";
+import { EditSelectMode } from "./modes/EditSelectMode";
 import { LineEditMode } from "./modes/LineEditMode";
+import { MoveSelectMode } from "./modes/MoveSelectMode";
+import { PolygonEditMode } from "./modes/PolygonEditMode";
 import { RectangleEditMode } from "./modes/RectangleEditMode";
 import { SelectMode } from "./modes/SelectMode";
 
@@ -50,7 +52,7 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
 export type InteractionModes =
     | "edit"
     | "select"
-    | "move-feature"
+    | "move"
     | "draw-point"
     | "draw-line-string"
     | "draw-polygon"
@@ -139,7 +141,7 @@ export class MapboxMap extends BaseElement {
 
         switch (feature.geometry.type) {
             case "Point":
-                return "move-feature";
+                return "move";
                 break;
             case "LineString":
                 return "draw-line-string";
@@ -148,7 +150,7 @@ export class MapboxMap extends BaseElement {
                 return "draw-polygon";
                 break;
             case "MultiPoint":
-                return "move-feature";
+                return "move";
                 break;
             case "MultiLineString":
                 return "draw-line-string";
@@ -216,6 +218,8 @@ export class MapboxMap extends BaseElement {
         switch (mode) {
             case "select":
                 return new SelectMode(this, this._geoLayer);
+            case "move":
+                return new MoveSelectMode(this, this._geoLayer);
             case "draw-point":
                 return new CreatePointMode(this, this._geoLayer);
             case "draw-line-string":
@@ -223,11 +227,11 @@ export class MapboxMap extends BaseElement {
             case "draw-circle":
                 return new CircleEditMode(this, this._geoEditLayer, feature);
             case "draw-polygon":
-                return new SelectMode(this, this._geoLayer);
+                return new PolygonEditMode(this, this._geoEditLayer);
             case "draw-rectangle":
                 return new RectangleEditMode(this, this._geoEditLayer, feature);
             case "edit":
-                return new EditMode(this, this._geoLayer);
+                return new EditSelectMode(this, this._geoLayer);
             default:
                 throw new Error(`Unknown mode: ${mode}`);
         }
@@ -242,6 +246,12 @@ export class MapboxMap extends BaseElement {
             return this._interactionMode.onKeyDown(event);
         }
         return false;
+    }
+
+    public onKeyUp(event: KeyboardEvent) {
+        if (this._interactionMode) {
+            this._interactionMode.onKeyUp(event);
+        }
     }
 
     private _onMouseMove(e: MapMouseEvent) {

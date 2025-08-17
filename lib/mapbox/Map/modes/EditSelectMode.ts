@@ -3,7 +3,7 @@ import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
 import { SelectMode } from "./SelectMode";
 
-export class EditMode extends SelectMode {
+export class EditSelectMode extends SelectMode {
     public override displayName = "Edit mode";
     public override name = "edit";
     public override description = "Edit features on the map.";

@@ -74,8 +74,25 @@ export class GeoJsonSource {
         this._mapboxGL.setFeatureState({ source: this._name, id }, state);
     }
 
+    public getSelectionState(id: number | string): boolean {
+        const state = this._mapboxGL.getFeatureState({
+            source: this._name,
+            id,
+        });
+        if (state) {
+            return state["selected"] as boolean;
+        }
+        return false;
+    }
     public setSelectionState(id: number | string, selected: boolean) {
         this.setFeatureState(id, { selected });
+    }
+
+    public setSelectionStateFromGuid(guid: string, selected: boolean) {
+        const id = this.featureIdFromGuid(guid);
+        if (id) {
+            this.setFeatureState(id, { selected });
+        }
     }
 
     private _createSourceAndLayers() {

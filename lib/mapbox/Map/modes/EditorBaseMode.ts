@@ -71,7 +71,7 @@ export abstract class EditorBaseMode extends InteractionMode {
     }
 
     public override onMouseDown(e: MapMouseEvent): void {
-        console.assert(this.isActive, "LineEditorMode is not active");
+        console.assert(this.isActive, `${this.name} is not active`);
         const feature = getFeatureAtScreenLocation(this._geoSource, e.point);
         if (feature) {
             switch (feature.properties!.__line_editor_type) {
@@ -90,12 +90,14 @@ export abstract class EditorBaseMode extends InteractionMode {
     }
 
     public override onMouseUp(e: MapMouseEvent): void {
-        console.assert(this.isActive, "LineEditorMode is not active");
+        console.assert(this.isActive, `${this.name} is not active`);
+
         this._onMouseUp(e);
     }
 
     public override onKeyDown(e: KeyboardEvent): boolean {
-        console.assert(this.isActive, "LineEditorMode is not active");
+        console.assert(this.isActive, `${this.name} is not active`);
+
         if (e.key === "Escape") {
             this._onEscapePressed();
         } else if (e.key === "Enter") {

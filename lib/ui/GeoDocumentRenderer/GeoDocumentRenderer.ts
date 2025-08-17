@@ -130,6 +130,17 @@ export class GeoDocumentRenderer extends EditorElement {
                         );
                     }
                 }}
+                @move-feature=${(e: CustomEvent) => {
+                    if (this._editor) {
+                        this._editor.applyCommand(
+                            new MoveObjectCommand({
+                                selectionSet: e.detail.selectionSet,
+                                lat: e.detail.lat,
+                                lon: e.detail.lon,
+                            })
+                        );
+                    }
+                }}
                 @create-feature=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(
@@ -142,6 +153,9 @@ export class GeoDocumentRenderer extends EditorElement {
                 }}
                 @object-selected=${(e: CustomEvent) =>
                     this._objectSelected(e.detail)}
+                @set-selection-set=${(e: CustomEvent) => {
+                    this._editor?.selectionSet.set(e.detail);
+                }}
                 @object-moved=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(

@@ -45,6 +45,7 @@ export abstract class InteractionMode {
     public onMouseUp(_event: MapMouseEvent): void {}
     public onMouseMove(_event: MapMouseEvent): void {}
     public onMouseLeave(_event: MapMouseEvent): void {}
+    public onKeyUp(_event: KeyboardEvent): void {}
     public onKeyDown(_event: KeyboardEvent): boolean {
         return false;
     }
