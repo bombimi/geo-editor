@@ -13,6 +13,7 @@ import { ifDefined } from "lit/directives/if-defined.js";
 import { customElement, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
+import { debounce } from "lodash-es";
 import { DocumentObject } from "../../editor/DocumentObject";
 import {
     DocumentProperty,
@@ -74,6 +75,15 @@ export class PropertyEditor extends EditorElement {
     @state() protected _addPropertyDropdown?: TemplateResult;
     @state() protected _removePropertyDropdown?: TemplateResult;
 
+    private _resetPropertiesDebounced = debounce(
+        this._resetProperties.bind(this),
+        200
+    );
+    private _resetObjectsDebounced = debounce(
+        this._resetObjects.bind(this),
+        200
+    );
+
     protected override _editorChanged(): void {
         super._editorChanged();
         this._editor?.document.onChanged.add(() => {
@@ -94,7 +104,7 @@ export class PropertyEditor extends EditorElement {
 
     protected override _selectionSetChanged(): void {
         if (this._editor && this._editor.document) {
-            this._resetObjects();
+            this._resetObjectsDebounced();
         }
     }
 
@@ -107,22 +117,32 @@ export class PropertyEditor extends EditorElement {
     private _removeEvents() {
         // remove all events for existing objects
         this._currentObjects.forEach((obj) => {
-            obj.onChanged.remove(this._resetProperties.bind(this));
-            obj.onDeleted.remove(this._resetProperties.bind(this));
-            obj.onPropertyChanged.remove(this._resetProperties.bind(this));
-            obj.onPropertyAdded.remove(this._resetProperties.bind(this));
-            obj.onPropertyRemoved.remove(this._resetProperties.bind(this));
+            obj.onChanged.remove(this._resetPropertiesDebounced.bind(this));
+            obj.onDeleted.remove(this._resetPropertiesDebounced.bind(this));
+            obj.onPropertyChanged.remove(
+                this._resetPropertiesDebounced.bind(this)
+            );
+            obj.onPropertyAdded.remove(
+                this._resetPropertiesDebounced.bind(this)
+            );
+            obj.onPropertyRemoved.remove(
+                this._resetPropertiesDebounced.bind(this)
+            );
         });
     }
 
     private _addEvents() {
         // add all events for new objects
         this._currentObjects.forEach((obj) => {
-            obj.onChanged.add(this._resetProperties.bind(this));
-            obj.onDeleted.add(this._resetProperties.bind(this));
-            obj.onPropertyChanged.add(this._resetProperties.bind(this));
-            obj.onPropertyAdded.add(this._resetProperties.bind(this));
-            obj.onPropertyRemoved.add(this._resetProperties.bind(this));
+            obj.onChanged.add(this._resetPropertiesDebounced.bind(this));
+            obj.onDeleted.add(this._resetPropertiesDebounced.bind(this));
+            obj.onPropertyChanged.add(
+                this._resetPropertiesDebounced.bind(this)
+            );
+            obj.onPropertyAdded.add(this._resetPropertiesDebounced.bind(this));
+            obj.onPropertyRemoved.add(
+                this._resetPropertiesDebounced.bind(this)
+            );
         });
     }
 
