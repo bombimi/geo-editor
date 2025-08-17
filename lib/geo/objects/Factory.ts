@@ -1,5 +1,4 @@
 import { GeoObject } from "geo/GeoObject";
-import { DocumentObject } from "../../editor/DocumentObject";
 import { checkIsCircle, CircleObject } from "./CircleObject";
 import { LineStringObject } from "./LineStringObject";
 import { PointObject } from "./PointObject";
@@ -35,7 +34,7 @@ export class Factory {
     public static createFeature(
         feature: GeoJSON.Feature,
         guid?: string
-    ): DocumentObject {
+    ): GeoObject {
         switch (feature.geometry.type) {
             case "Point":
                 return this.createPoint(feature, guid);

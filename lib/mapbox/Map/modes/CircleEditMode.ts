@@ -20,7 +20,7 @@ export class CircleEditMode extends FsmEditorMode {
     public override name = "circle-editor";
     public override description = "Edit circles on the map.";
     public override cursor = "crosshair";
-    public override useEditLayer = true;
+    public override showEditLayer = true;
 
     private _circle?: CircleObject;
     private _potentialCenterPos?: number[];

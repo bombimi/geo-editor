@@ -9,7 +9,7 @@ export abstract class FsmEditorMode extends EditorBaseMode {
     protected _fsm?: StateMachine;
 
     constructor(map: MapboxMap, geoSource: GeoJsonSource) {
-        super(map, geoSource);
+        super(map, geoSource, geoSource);
     }
 
     protected override _onVertexSelected(_vertex: Feature): void {

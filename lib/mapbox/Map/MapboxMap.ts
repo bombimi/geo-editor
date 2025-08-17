@@ -75,7 +75,6 @@ export class MapboxMap extends BaseElement {
 
     private _geoLayer?: GeoJsonSource;
     private _geoEditLayer?: GeoJsonSource;
-    private _currentLayer?: GeoJsonSource;
 
     private _interactionMode?: InteractionMode;
 
@@ -98,7 +97,8 @@ export class MapboxMap extends BaseElement {
     @watch("selectionSet")
     _onSelectionSetChange() {
         if (this.mapboxGL) {
-            this._currentLayer?.setSelectionSet(this.selectionSet);
+            this._geoLayer?.setSelectionSet(this.selectionSet);
+            //this._geoEditLayer?.setSelectionSet(this.selectionSet);
             this._interactionMode?.onSelectionSetChanged(this.selectionSet);
         }
     }
@@ -185,15 +185,8 @@ export class MapboxMap extends BaseElement {
         this._interactionMode = this._createMode(mode, feature);
 
         if (this._geoLayer && this._geoEditLayer) {
-            if (this._interactionMode.useEditLayer) {
-                this._geoEditLayer.active = true;
-                this._geoLayer.active = false;
-                this._currentLayer = this._geoEditLayer;
-            } else {
-                this._geoLayer.active = true;
-                this._geoEditLayer.active = false;
-                this._currentLayer = this._geoLayer;
-            }
+            this._geoEditLayer.active = this._interactionMode.showEditLayer;
+            this._geoLayer.active = this._interactionMode.showGeoLayer;
         }
         this._interactionMode.onActivate();
         this._interactionMode.onSelectionSetChanged(this.selectionSet);
@@ -217,9 +210,13 @@ export class MapboxMap extends BaseElement {
 
         switch (mode) {
             case "select":
-                return new SelectMode(this, this._geoLayer);
+                return new SelectMode(this, this._geoLayer, this._geoLayer);
             case "move":
-                return new MoveSelectMode(this, this._geoLayer);
+                return new MoveSelectMode(
+                    this,
+                    this._geoEditLayer,
+                    this._geoLayer
+                );
             case "draw-point":
                 return new CreatePointMode(this, this._geoLayer);
             case "draw-line-string":

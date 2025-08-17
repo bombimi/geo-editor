@@ -7,13 +7,15 @@ export abstract class InteractionMode {
     public abstract displayName: string;
     public abstract description: string;
     public readonly cursor: string = "";
-    public readonly useEditLayer: boolean = false;
+    public readonly showEditLayer: boolean = false;
+    public readonly showGeoLayer: boolean = true;
 
     private _isActive = false;
 
     constructor(
         protected _map: MapboxMap,
-        protected _geoSource: GeoJsonSource
+        protected _geoSource: GeoJsonSource,
+        protected _featureSource: GeoJsonSource
     ) {}
 
     protected _setCursor(cursor?: string): void {

@@ -10,7 +10,7 @@ export class EditSelectMode extends SelectMode {
     public override cursor = "pointer";
 
     constructor(map: MapboxMap, geoSource: GeoJsonSource) {
-        super(map, geoSource);
+        super(map, geoSource, geoSource);
     }
 
     public override onSelectionSetChanged(selectionSet: string[]): void {

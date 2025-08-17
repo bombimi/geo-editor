@@ -9,8 +9,12 @@ export abstract class EditorBaseMode extends InteractionMode {
     protected _dirty = true;
     protected _hoveredFeatureId?: any;
 
-    constructor(map: MapboxMap, geoSource: GeoJsonSource) {
-        super(map, geoSource);
+    constructor(
+        map: MapboxMap,
+        geoSource: GeoJsonSource,
+        featureSource: GeoJsonSource
+    ) {
+        super(map, geoSource, featureSource);
     }
 
     protected _markDirty() {

@@ -11,12 +11,16 @@ export class SelectMode extends InteractionMode {
     public override description = "Select objects on the map.";
     public override cursor = "pointer";
 
-    private _appendMode = false;
+    protected _appendMode = false;
     protected _selectionSet: string[] = [];
-    private _hoveredFeatureId?: string | number;
+    protected _hoveredFeatureId?: string | number;
 
-    constructor(map: MapboxMap, geoSource: GeoJsonSource) {
-        super(map, geoSource);
+    constructor(
+        map: MapboxMap,
+        geoSource: GeoJsonSource,
+        featureSource: GeoJsonSource
+    ) {
+        super(map, geoSource, featureSource);
     }
 
     public override onSelectionSetChanged(selectionSet: string[]): void {
@@ -32,7 +36,7 @@ export class SelectMode extends InteractionMode {
     }
 
     public override onKeyDown(e: KeyboardEvent): boolean {
-        if (e.key == "Control" && !this._appendMode) {
+        if (e.ctrlKey && !this._appendMode) {
             console.log("appending");
             this._appendMode = true;
             return true;
@@ -41,21 +45,21 @@ export class SelectMode extends InteractionMode {
     }
 
     public override onKeyUp(e: KeyboardEvent): void {
-        if (e.key == "Control") {
-            this._appendMode = false;
-            console.log("appending stopped");
-        }
+        this._appendMode = false;
+        console.log("appending stopped");
     }
 
     public override onClick(e: MapMouseEvent): void {
         console.assert(this.isActive, "SelectMode is not active");
-        const features = this._geoSource.featuresAtScreenLocation(e.point);
+        const features = this._featureSource.featuresAtScreenLocation(e.point);
 
         if (this._map && features && features.length) {
             const featureIds = features
-                .map((x) => this._geoSource.featureGuidFromId(x.id as number))
+                .map((x) =>
+                    this._featureSource.featureGuidFromId(x.id as number)
+                )
                 .filter((x) => x !== undefined);
-            if (this._appendMode) {
+            if (e.originalEvent.ctrlKey) {
                 if (this._selectionSet.includes(featureIds[0])) {
                     // remove the feature if it is already in the set
                     this._selectionSet = this._selectionSet.filter(
@@ -79,16 +83,17 @@ export class SelectMode extends InteractionMode {
 
         if (this._map.mapboxGL) {
             if (this._hoveredFeatureId !== undefined) {
-                this._geoSource.setSelectionState(
+                this._featureSource.setSelectionState(
                     this._hoveredFeatureId as number,
                     this._map.selectionSet.includes(
-                        this._geoSource.featureGuidFromId(
+                        this._featureSource.featureGuidFromId(
                             this._hoveredFeatureId as number
                         )!
                     )
                 );
             }
             this._hoveredFeatureId = undefined;
+            this._appendMode = false;
             this._setCursor();
         }
     }
@@ -97,28 +102,37 @@ export class SelectMode extends InteractionMode {
         console.assert(this.isActive, "SelectMode is not active");
 
         // get features at the mouse position
-        const features = this._geoSource.featuresAtScreenLocation(e.point);
+        const features = this._featureSource.featuresAtScreenLocation(e.point);
+
+        const reset = (id: number) => {
+            const guid = this._featureSource.featureGuidFromId(id) as string;
+            if (!this._selectionSet.includes(guid)) {
+                this._featureSource.setSelectionState(id, false);
+            }
+        };
 
         if (this._map.mapboxGL) {
+            const haveFeatures = features && features.length;
             if (this._hoveredFeatureId) {
-                this._geoSource.setSelectionState(
-                    this._hoveredFeatureId,
-                    this._map.selectionSet.includes(
-                        this._geoSource.featureGuidFromId(
-                            this._hoveredFeatureId as number
-                        )!
-                    )
-                );
-                this._hoveredFeatureId = undefined;
-            }
-            if (features && features.length) {
-                this._hoveredFeatureId = features[0].id;
-                this._geoSource.setSelectionState(
-                    this._hoveredFeatureId as number,
-                    true
-                );
+                if (haveFeatures) {
+                    if (features[0].id !== this._hoveredFeatureId) {
+                        reset(this._hoveredFeatureId as number);
+                        this._hoveredFeatureId = features[0].id;
+                    }
+                } else {
+                    reset(this._hoveredFeatureId as number);
+                    this._hoveredFeatureId = undefined;
+                }
+            } else {
+                if (features && features.length) {
+                    this._hoveredFeatureId = features[0].id;
+                    this._featureSource.setSelectionState(
+                        this._hoveredFeatureId as number,
+                        true
+                    );
 
-                this._setCursor("pointer");
+                    this._setCursor("pointer");
+                }
             }
             // // this._map.getCanvas().style.cursor = features && features.length ? "pointer" : "";
         }

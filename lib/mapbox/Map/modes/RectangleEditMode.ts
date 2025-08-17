@@ -19,7 +19,7 @@ export class RectangleEditMode extends FsmEditorMode {
     public override name = "rectangle-editor";
     public override description = "Edit rectangles on the map.";
     public override cursor = "crosshair";
-    public override useEditLayer = true;
+    public override showEditLayer = true;
 
     private _rect?: RectangleObject;
     private _firstPoint?: number[];

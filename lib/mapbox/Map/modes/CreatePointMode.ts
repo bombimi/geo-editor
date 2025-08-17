@@ -11,7 +11,7 @@ export class CreatePointMode extends InteractionMode {
     public override cursor = "crosshair";
 
     constructor(map: MapboxMap, geoSource: GeoJsonSource) {
-        super(map, geoSource);
+        super(map, geoSource, geoSource);
     }
 
     public override onClick(e: MapMouseEvent): void {

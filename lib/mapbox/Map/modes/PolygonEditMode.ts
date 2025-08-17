@@ -1,10 +1,5 @@
 import { featureCollection, polygon } from "@turf/helpers";
-import {
-    Feature,
-    GeoJsonProperties,
-    Polygon,
-    Position,
-} from "geojson";
+import { Feature, GeoJsonProperties, Polygon, Position } from "geojson";
 import { cloneDeep } from "lodash-es";
 import { LngLat, MapMouseEvent } from "mapbox-gl";
 import { StateMachine } from "state-machine/dist/state-machine.js";
@@ -24,7 +19,7 @@ export class PolygonEditMode extends FsmEditorMode {
     public override name = "polygon-editor";
     public override description = "Edit polygons on the map.";
     public override cursor = "crosshair";
-    public override useEditLayer = true;
+    public override showEditLayer = true;
 
     private _currentRing: number = 0;
     private _mouseLngLat: LngLat | undefined;
@@ -87,9 +82,9 @@ export class PolygonEditMode extends FsmEditorMode {
                     _fsm: StateMachine,
                     e: MapMouseEvent
                 ) => {
-                    this._polygonFeature.geometry.coordinates[this._currentRing][
-                        this._currentFeatureIndex!
-                    ] = e.lngLat.toArray();
+                    this._polygonFeature.geometry.coordinates[
+                        this._currentRing
+                    ][this._currentFeatureIndex!] = e.lngLat.toArray();
                     this._markDirty();
                 },
 
@@ -137,10 +132,9 @@ export class PolygonEditMode extends FsmEditorMode {
                     lngLat: LngLat
                 ) => {
                     if (lngLat) {
-                        this._polygonFeature.geometry.coordinates[this._currentRing].push([
-                            lngLat.lng,
-                            lngLat.lat,
-                        ]);
+                        this._polygonFeature.geometry.coordinates[
+                            this._currentRing
+                        ].push([lngLat.lng, lngLat.lat]);
                         this._selectedVertexPosition = lngLat;
                         this._markDirty();
                     }
@@ -181,10 +175,14 @@ export class PolygonEditMode extends FsmEditorMode {
     }
 
     private _setSelectedVertexPosition() {
-        if (this._polygonFeature.geometry.coordinates[this._currentRing].length > 0) {
+        if (
+            this._polygonFeature.geometry.coordinates[this._currentRing]
+                .length > 0
+        ) {
             const lastCoord =
                 this._polygonFeature.geometry.coordinates[this._currentRing][
-                this._polygonFeature.geometry.coordinates[this._currentRing].length - 1
+                    this._polygonFeature.geometry.coordinates[this._currentRing]
+                        .length - 1
                 ];
             this._selectedVertexPosition = new LngLat(
                 lastCoord[0],
@@ -242,10 +240,12 @@ export class PolygonEditMode extends FsmEditorMode {
         if (this._selectedVertexPosition && this._mouseLngLat) {
             features.push(
                 polygon(
-                    [[
-                        this._selectedVertexPosition.toArray(),
-                        this._mouseLngLat.toArray(),
-                    ]],
+                    [
+                        [
+                            this._selectedVertexPosition.toArray(),
+                            this._mouseLngLat.toArray(),
+                        ],
+                    ],
                     {
                         ...EditLineStyle,
                         __line_editor_type: "FLOATING_LINE",

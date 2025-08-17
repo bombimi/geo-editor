@@ -19,7 +19,7 @@ export class LineEditMode extends FsmEditorMode {
     public override name = "line-editor";
     public override description = "Edit lines on the map.";
     public override cursor = "crosshair";
-    public override useEditLayer = true;
+    public override showEditLayer = true;
 
     private _mouseLngLat: LngLat | undefined;
     private _selectedVertexPosition: LngLat | undefined;

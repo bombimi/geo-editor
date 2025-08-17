@@ -31,7 +31,7 @@ export class GeoDocument extends Document {
         this._updateMetaData();
     }
 
-    public get geoJson(): GeoJson | null {
+    public get geoJson(): GeoJson {
         return new GeoJson({
             type: "FeatureCollection",
             features: this.children
