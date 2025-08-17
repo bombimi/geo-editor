@@ -32,6 +32,7 @@ import { UndoBufferArgs, UndoBufferEventArgs } from "editor/UndoBuffer";
 import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
 import { GeoObject } from "geo/GeoObject";
 import { Feature } from "geojson";
+import { debounce } from "lodash-es";
 import { InteractionModes } from "mapbox/Map";
 import { saveTextToFile, showToast } from "ui-lib/Utils";
 import "../DocumentEditor";
@@ -64,7 +65,7 @@ const EditorWindowModes: ModeT[] = [
         icon: "arrows-move",
         iconset: "default",
         mode: "move",
-        enabled: false,
+        enabled: true,
         description: "Move objects",
     },
     {
@@ -121,7 +122,10 @@ export class EditorWindow extends EditorElement {
     protected _documentRenderer?: GeoDocumentRenderer;
 
     private _boundHandleKeyDown = this._handleKeyDown.bind(this);
-
+    private _saveCurrentStateDebounced = debounce(
+        this._saveCurrentState.bind(this),
+        5000
+    );
     constructor() {
         super();
         console.log("EditorWindow constructor");
@@ -289,7 +293,7 @@ export class EditorWindow extends EditorElement {
         this.editorGuid = editor.guid;
 
         this._document.onChanged.add(() => {
-            this._saveCurrentState();
+            this._saveCurrentStateDebounced();
         });
 
         this._hasUndo = editor.undoBuffer.canGoBack();
@@ -302,7 +306,7 @@ export class EditorWindow extends EditorElement {
         window.localStorage.setItem("lastDocumentMimeType", mimeType);
         window.localStorage.removeItem("lastAutoSave");
         window.localStorage.removeItem("lastAutoSaveUndoBuffer");
-        this._saveCurrentState();
+        this._saveCurrentStateDebounced();
 
         return this._document;
     }
