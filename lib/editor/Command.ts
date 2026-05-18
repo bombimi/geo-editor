@@ -1,5 +1,6 @@
 import { camelCaseToReadable } from "ui-lib/Utils";
 import { Document } from "./Document";
+import { uuidv4 } from "./Utils";
 
 export type CommandBaseOptions = {
     guid?: string;
@@ -9,11 +10,11 @@ export type CommandBaseOptions = {
 
 export abstract class Command {
     private readonly _version: number = 1;
-    private readonly _guid: string = crypto.randomUUID();
+    private readonly _guid: string = uuidv4();
     protected readonly _selectionSet: string[];
 
     constructor(options: CommandBaseOptions) {
-        this._guid = options.guid ?? crypto.randomUUID();
+        this._guid = options.guid ?? uuidv4();
         this._selectionSet = options.selectionSet ?? [];
     }
 

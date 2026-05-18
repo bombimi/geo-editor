@@ -5,9 +5,10 @@ import { Command } from "./Command";
 import { Document } from "./Document";
 import { editorManager } from "./EditorManager";
 import { SelectionSet } from "./SelectionSet";
+import { uuidv4 } from "./Utils";
 
 export class Editor {
-    public readonly guid: string = crypto.randomUUID();
+    public readonly guid: string = uuidv4();
 
     private _providers = getGeoDocumentProviders();
     private _undoBuffer = new UndoBuffer();
@@ -64,7 +65,11 @@ export class Editor {
             throw new Error("No document loaded.");
         }
         const command = this._undoBuffer.back();
-        console.log("Undoing command", command.description, this._document.name);
+        console.log(
+            "Undoing command",
+            command.description,
+            this._document.name
+        );
 
         if (command) {
             command.undo(this._document);
@@ -76,7 +81,11 @@ export class Editor {
             throw new Error("No document loaded.");
         }
         const command = this._undoBuffer.forward();
-        console.log("Redoing command", command.description, this._document.name);
+        console.log(
+            "Redoing command",
+            command.description,
+            this._document.name
+        );
 
         if (command) {
             command.do(this._document);
@@ -87,7 +96,11 @@ export class Editor {
         if (this._document === null) {
             throw new Error("No document loaded.");
         }
-        console.log("Applying command", command.description, this._document.name);
+        console.log(
+            "Applying command",
+            command.description,
+            this._document.name
+        );
         command.do(this._document);
         this._undoBuffer.push(command);
         if (command.clearSelection()) {

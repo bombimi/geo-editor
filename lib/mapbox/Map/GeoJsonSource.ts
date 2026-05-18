@@ -70,6 +70,14 @@ export class GeoJsonSource {
         return uniqBy(features, (f) => f.properties!.__meta_guid);
     }
 
+    public featureAtScreenLocation(point: Point): Feature | undefined {
+        const f = this.featuresAtScreenLocation(point);
+        if (f.length > 0) {
+            return f[0];
+        }
+        return undefined;
+    }
+
     public setFeatureState(id: number | string, state: any) {
         this._mapboxGL.setFeatureState({ source: this._name, id }, state);
     }

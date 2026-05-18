@@ -29,7 +29,7 @@ export class RectangleEditMode extends FsmEditorMode {
         geoSource: GeoJsonSource,
         protected _existingFeature?: Feature
     ) {
-        super(map, geoSource);
+        super(map, geoSource, geoSource);
 
         if (_existingFeature) {
             if (!checkIsRectangle(_existingFeature)) {
@@ -73,7 +73,10 @@ export class RectangleEditMode extends FsmEditorMode {
                     console.log(
                         "RectangleEditMode: dragSecondPoint@mouse_move"
                     );
-                    console.assert(this._rect);
+                    console.assert(
+                        this._rect,
+                        "RectangleEditMode: _rect is not set in dragSecondPoint state"
+                    );
 
                     if (this._rect) {
                         this._rect = rectangleFromTwoPoints(
@@ -107,7 +110,10 @@ export class RectangleEditMode extends FsmEditorMode {
                     e: MapMouseEvent
                 ) => {
                     console.log("RectangleEditMode: getSecondPoint@mouse_move");
-                    console.assert(this._firstPoint);
+                    console.assert(
+                        this._firstPoint,
+                        "RectangleEditMode: _firstPoint is not set in getSecondPoint state"
+                    );
                     if (this._firstPoint) {
                         this._rect = rectangleFromTwoPoints(
                             this._firstPoint,

@@ -1,5 +1,6 @@
 import { Command, CommandBaseOptions } from "editor/Command";
 import { Document } from "editor/Document";
+import { uuidv4 } from "editor/Utils";
 import { Factory } from "geo/objects/Factory";
 import { getFeatureDisplayName } from "geo/Utils";
 import { Feature } from "geojson";
@@ -26,7 +27,7 @@ export class CreateFeatureCommand extends Command {
 
     public override do(doc: Document): void {
         if (!this._featureGuid) {
-            this._featureGuid = crypto.randomUUID();
+            this._featureGuid = uuidv4();
         }
         doc.addChild(Factory.createFeature(this._feature, this._featureGuid));
     }

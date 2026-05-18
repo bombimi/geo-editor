@@ -36,6 +36,7 @@ export abstract class EditorBaseMode extends InteractionMode {
 
     protected _onVertexSelected(_vertex: Feature) {}
     protected _onMidpointSelected(_midpoint: Feature) {}
+    protected _onFeatureSelected(_feature: Feature) {}
     protected _onMapSelected(_point: LngLat) {}
     protected _onEscapePressed() {}
     protected _onEnterPressed() {}
@@ -47,7 +48,7 @@ export abstract class EditorBaseMode extends InteractionMode {
     // InteractionMode methods
     //-------------------------------------------------------------------------
     public override onMouseMove(e: MapMouseEvent): void {
-        console.assert(this.isActive, "LineEditorMode is not active");
+        console.assert(this.isActive, `${this.name} is not active`);
 
         if (this._hoveredFeatureId) {
             this._geoSource.setSelectionState(this._hoveredFeatureId, false);
@@ -78,13 +79,19 @@ export abstract class EditorBaseMode extends InteractionMode {
         console.assert(this.isActive, `${this.name} is not active`);
         const feature = getFeatureAtScreenLocation(this._geoSource, e.point);
         if (feature) {
+            let handled = false;
             switch (feature.properties!.__line_editor_type) {
                 case "VERTEX":
                     this._onVertexSelected(feature);
+                    handled = true;
                     break;
                 case "MIDPOINT":
                     this._onMidpointSelected(feature);
+                    handled = true;
                     break;
+            }
+            if (handled) {
+                this._onFeatureSelected(feature);
             }
         } else {
             this._onMapSelected(e.lngLat);

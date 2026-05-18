@@ -8,8 +8,12 @@ import { EditorBaseMode } from "./EditorBaseMode";
 export abstract class FsmEditorMode extends EditorBaseMode {
     protected _fsm?: StateMachine;
 
-    constructor(map: MapboxMap, geoSource: GeoJsonSource) {
-        super(map, geoSource, geoSource);
+    constructor(
+        map: MapboxMap,
+        geoSource: GeoJsonSource,
+        featureSource: GeoJsonSource
+    ) {
+        super(map, geoSource, featureSource);
     }
 
     protected override _onVertexSelected(_vertex: Feature): void {
@@ -18,6 +22,10 @@ export abstract class FsmEditorMode extends EditorBaseMode {
 
     protected override _onMidpointSelected(_midpoint: Feature): void {
         this._fsm?.do("midpoint_selected", _midpoint);
+    }
+
+    protected override _onFeatureSelected(_midpoint: Feature): void {
+        this._fsm?.do("feature_selected", _midpoint);
     }
 
     protected override _onMapSelected(lngLat: LngLat): void {

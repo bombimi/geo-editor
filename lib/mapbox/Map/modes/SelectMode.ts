@@ -1,6 +1,7 @@
 import { InteractionMode } from "../InteractionMode";
 
-import { MapMouseEvent } from "mapbox-gl";
+import { SelectionSet } from "editor/SelectionSet";
+import { MapMouseEvent, Point } from "mapbox-gl";
 import { createCustomEvent } from "ui-lib/Utils";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
@@ -12,7 +13,7 @@ export class SelectMode extends InteractionMode {
     public override cursor = "pointer";
 
     protected _appendMode = false;
-    protected _selectionSet: string[] = [];
+    protected _selectionSet = new SelectionSet();
     protected _hoveredFeatureId?: string | number;
 
     constructor(
@@ -24,7 +25,7 @@ export class SelectMode extends InteractionMode {
     }
 
     public override onSelectionSetChanged(selectionSet: string[]): void {
-        this._selectionSet = selectionSet;
+        this._selectionSet = new SelectionSet(selectionSet);
     }
 
     public override onActivate(): void {
@@ -44,40 +45,16 @@ export class SelectMode extends InteractionMode {
         return super.onKeyDown(e);
     }
 
-    public override onKeyUp(e: KeyboardEvent): void {
+    public override onKeyUp(_e: KeyboardEvent): void {
         this._appendMode = false;
         console.log("appending stopped");
     }
 
     public override onClick(e: MapMouseEvent): void {
         console.assert(this.isActive, "SelectMode is not active");
-        const features = this._featureSource.featuresAtScreenLocation(e.point);
-
-        if (this._map && features && features.length) {
-            const featureIds = features
-                .map((x) =>
-                    this._featureSource.featureGuidFromId(x.id as number)
-                )
-                .filter((x) => x !== undefined);
-            if (e.originalEvent.ctrlKey) {
-                if (this._selectionSet.includes(featureIds[0])) {
-                    // remove the feature if it is already in the set
-                    this._selectionSet = this._selectionSet.filter(
-                        (x) => x !== featureIds[0]
-                    );
-                } else {
-                    // append to the set
-                    this._selectionSet = [...this._selectionSet, featureIds[0]];
-                }
-            } else {
-                this._selectionSet = [featureIds[0]];
-            }
-
-            this._map.dispatchEvent(
-                createCustomEvent("set-selection-set", this._selectionSet)
-            );
-        }
+        this._updateSelectionSet(e.point, e.originalEvent.ctrlKey);
     }
+
     public override onMouseLeave(): void {
         console.assert(this.isActive, "SelectMode is not active");
 
@@ -106,7 +83,7 @@ export class SelectMode extends InteractionMode {
 
         const reset = (id: number) => {
             const guid = this._featureSource.featureGuidFromId(id) as string;
-            if (!this._selectionSet.includes(guid)) {
+            if (!this._selectionSet.contains(guid)) {
                 this._featureSource.setSelectionState(id, false);
             }
         };
@@ -136,5 +113,35 @@ export class SelectMode extends InteractionMode {
             }
             // // this._map.getCanvas().style.cursor = features && features.length ? "pointer" : "";
         }
+    }
+
+    protected _updateSelectionSet(point: Point, append: boolean): void {
+        const feature = this._featureSource.featureAtScreenLocation(point);
+
+        if (this._map && feature && this._featureSource) {
+            const featureGuid = this._featureSource.featureGuidFromId(
+                feature.id as number
+            );
+
+            if (featureGuid) {
+                if (append) {
+                    if (this._selectionSet.contains(featureGuid)) {
+                        this._selectionSet.remove(featureGuid);
+                    } else {
+                        this._selectionSet.add(featureGuid);
+                    }
+                } else {
+                    this._selectionSet = new SelectionSet([featureGuid]);
+                }
+
+                this._raiseSelectionSetChangedEvent();
+            }
+        }
+    }
+
+    protected _raiseSelectionSetChangedEvent() {
+        this._map.dispatchEvent(
+            createCustomEvent("set-selection-set", this._selectionSet.toArray())
+        );
     }
 }

@@ -30,7 +30,7 @@ export class CircleEditMode extends FsmEditorMode {
         geoSource: GeoJsonSource,
         protected _existingFeature?: Feature
     ) {
-        super(map, geoSource);
+        super(map, geoSource, geoSource);
 
         if (_existingFeature) {
             if (!checkIsCircle(_existingFeature)) {
@@ -72,7 +72,10 @@ export class CircleEditMode extends FsmEditorMode {
                     e: MapMouseEvent
                 ) => {
                     console.log("CircleEditMode: dragRadius@mouse_move");
-                    console.assert(this._circle);
+                    console.assert(
+                        this._circle,
+                        "CircleEditMode: _circle is not set in dragRadius state"
+                    );
 
                     if (this._circle) {
                         this._circle = circleFromTwoPoints(
@@ -102,7 +105,10 @@ export class CircleEditMode extends FsmEditorMode {
                     e: MapMouseEvent
                 ) => {
                     console.log("CircleEditMode: getRadius@mouse_move");
-                    console.assert(this._potentialCenterPos);
+                    console.assert(
+                        this._potentialCenterPos,
+                        "CircleEditMode: _potentialCenterPos is not set in getRadius state"
+                    );
                     if (this._potentialCenterPos) {
                         this._circle = circleFromTwoPoints(
                             this._potentialCenterPos,

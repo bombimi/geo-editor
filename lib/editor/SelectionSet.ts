@@ -10,6 +10,12 @@ export class SelectionSet {
 
     private _selection: Set<string> = new Set<string>();
 
+    constructor(items?: string[]) {
+        if (items) {
+            items.forEach((x) => this.add(x));
+        }
+    }
+
     public get length(): number {
         return this._selection.size;
     }
@@ -33,13 +39,17 @@ export class SelectionSet {
     }
 
     public add(guid: string): void {
-        this._selection.add(guid);
-        this._raiseOnChanged();
+        if (!this.contains(guid)) {
+            this._selection.add(guid);
+            this._raiseOnChanged();
+        }
     }
 
     public remove(guid: string): void {
-        this._selection.delete(guid);
-        this._raiseOnChanged();
+        if (this.contains(guid)) {
+            this._selection.delete(guid);
+            this._raiseOnChanged();
+        }
     }
 
     public clear(): void {

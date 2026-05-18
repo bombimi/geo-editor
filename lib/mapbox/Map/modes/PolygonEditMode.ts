@@ -1,4 +1,5 @@
 import { featureCollection, polygon } from "@turf/helpers";
+import { uuidv4 } from "editor/Utils";
 import { Feature, GeoJsonProperties, Polygon, Position } from "geojson";
 import { cloneDeep } from "lodash-es";
 import { LngLat, MapMouseEvent } from "mapbox-gl";
@@ -40,7 +41,7 @@ export class PolygonEditMode extends FsmEditorMode {
         geoSource: GeoJsonSource,
         protected _existingFeature?: Feature
     ) {
-        super(map, geoSource);
+        super(map, geoSource, geoSource);
 
         if (_existingFeature) {
             if (_existingFeature.geometry.type !== "Polygon") {
@@ -265,7 +266,7 @@ export class PolygonEditMode extends FsmEditorMode {
 
         features.forEach((f) => {
             f.properties = f.properties ?? {};
-            f.properties.__meta_guid = crypto.randomUUID();
+            f.properties.__meta_guid = uuidv4();
         });
 
         const collection = featureCollection(features);

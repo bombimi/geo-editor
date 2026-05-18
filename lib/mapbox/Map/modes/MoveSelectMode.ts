@@ -1,10 +1,10 @@
 import { featureCollection } from "@turf/helpers";
+import { SelectionSet } from "editor/SelectionSet";
 import { GeoDocument } from "geo/GeoDocument";
 import { GeoObject } from "geo/GeoObject";
 import { Factory } from "geo/objects/Factory";
 import { debounce } from "lodash-es";
-import { LngLat, MapMouseEvent } from "mapbox-gl";
-import { createCustomEvent } from "ui-lib/Utils";
+import { LngLat, MapMouseEvent, Point } from "mapbox-gl";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
 import { SelectMode } from "./SelectMode";
@@ -19,6 +19,12 @@ export class MoveSelectMode extends SelectMode {
 
     protected _dirty = true;
     private _moving = false;
+    private _dragging = false;
+    private _dragDecided = false;
+    private _clickedFeature = "";
+    private _clickedFeatureWasInSelectionSet = false;
+    private _append = false;
+    private _moveStartPoint = new Point(0, 0);
     private _lastLngLat?: LngLat;
     private _mouseMoveDebounced = debounce(this._mouseMove.bind(this), 1);
     protected _editDoc: GeoDocument = new GeoDocument();
@@ -73,51 +79,77 @@ export class MoveSelectMode extends SelectMode {
         this._markDirty();
     }
 
+    public override onClick(_e: MapMouseEvent): void {
+        // we don't want the default on click behaviour
+    }
+
     public override onMouseDown(e: MapMouseEvent): void {
-        const features = this._featureSource.featuresAtScreenLocation(e.point);
-        if (this._map && features && features.length) {
-            console.log("onMouseDown: moving");
+        const feature = this._featureSource.featureAtScreenLocation(e.point);
 
-            const guid: string = (features[0].properties as any).__meta_guid;
+        if (feature) {
+            const guid = feature.properties!.__meta_guid;
 
-            if (!e.originalEvent.ctrlKey) {
-                // ignore if we have clicked on an already selected feature
-                if (!this._selectionSet.includes(guid)) {
-                    this._selectionSet = [guid];
-                    this._map.dispatchEvent(
-                        createCustomEvent(
-                            "set-selection-set",
-                            this._selectionSet
-                        )
-                    );
-                }
-            } else {
-                this._map.dispatchEvent(
-                    createCustomEvent("set-selection-set", [
-                        ...this._selectionSet,
-                        guid,
-                    ])
-                );
-            }
+            this._append = e.originalEvent.ctrlKey;
 
             this._map.mapboxGL!.dragPan.disable();
             this._map.mapboxGL!.dragRotate.disable();
 
             this._moving = true;
+            this._dragging = false;
+            this._dragDecided = false;
+            this._moveStartPoint = e.point.clone();
             this._lastLngLat = e.lngLat;
+            this._clickedFeature = guid;
+            this._clickedFeatureWasInSelectionSet =
+                this._selectionSet.contains(guid);
+
+            // If not appending and the clicked feature is not already part of
+            // the current selection, immediately narrow the selection to just
+            // this feature so that only it drags (not the previous selection).
+            if (!this._append && !this._clickedFeatureWasInSelectionSet) {
+                this._selectionSet = new SelectionSet([guid]);
+                this.onSelectionSetChanged(this._selectionSet.toArray());
+                this._raiseSelectionSetChangedEvent();
+            }
         }
     }
 
-    public override onMouseUp(_event: MapMouseEvent): void {
+    protected _isDragging(point: Point): boolean {
+        // we only remove features from the selection set if we have not moved a
+        // certain amount of pixels other we interpret it as a drag
+        const dx = point.x - this._moveStartPoint.x;
+        const dy = point.y - this._moveStartPoint.y;
+        const distMoved = Math.sqrt(dx * dx + dy * dy);
+        return distMoved > 8;
+    }
+
+    public override onMouseUp(e: MapMouseEvent): void {
         if (this._moving) {
-            // commit to the move
-            if (this._editDelta.lng !== 0 || this._editDelta.lat !== 0) {
-                this._map._dispatchEvent("move-feature", {
-                    selectionSet: this._selectionSet,
-                    lon: this._editDelta.lng,
-                    lat: this._editDelta.lat,
-                });
+            if (this._isDragging(e.point)) {
+                // commit to the move
+                if (this._editDelta.lng !== 0 || this._editDelta.lat !== 0) {
+                    this._map._dispatchEvent("move-feature", {
+                        selectionSet: this._selectionSet.toArray(),
+                        lon: this._editDelta.lng,
+                        lat: this._editDelta.lat,
+                    });
+                }
+            } else {
+                // is a click so update the selection set
+                if (this._append) {
+                    if (this._selectionSet.contains(this._clickedFeature)) {
+                        this._selectionSet.remove(this._clickedFeature);
+                    } else {
+                        this._selectionSet.add(this._clickedFeature);
+                    }
+                } else {
+                    this._selectionSet = new SelectionSet([
+                        this._clickedFeature,
+                    ]);
+                }
+                this._raiseSelectionSetChangedEvent();
             }
+
             this._editDelta = new LngLat(0, 0);
             this._moving = false;
             this._map.mapboxGL!.dragPan.enable();
@@ -133,20 +165,31 @@ export class MoveSelectMode extends SelectMode {
 
     private _mouseMove(e: MapMouseEvent): void {
         if (this._moving) {
-            console.log("onMouseMove: moving");
-
-            if (this._selectionSet.length > 0 && this._lastLngLat) {
+            if (this._lastLngLat) {
                 const deltaLat = e.lngLat.lat - this._lastLngLat!.lat;
                 const deltaLon = e.lngLat.lng - this._lastLngLat!.lng;
-                console.log("move");
 
-                this._editDoc.children
-                    .map((x) => x as GeoObject)
-                    .forEach((x) => x.move(deltaLat, deltaLon));
-
-                this._markDirty();
                 this._editDelta.lng += deltaLon;
                 this._editDelta.lat += deltaLat;
+
+                if (this._isDragging(e.point)) {
+                    if (!this._dragDecided) {
+                        // make sure the point is in the selection set
+                        if (
+                            !this._selectionSet.contains(this._clickedFeature)
+                        ) {
+                            this._selectionSet.add(this._clickedFeature);
+                            this._raiseSelectionSetChangedEvent();
+                        }
+                        this._dragDecided = true;
+                    }
+
+                    this._editDoc.children
+                        .map((x) => x as GeoObject)
+                        .forEach((x) => x.move(deltaLat, deltaLon));
+
+                    this._markDirty();
+                }
                 this._lastLngLat = e.lngLat;
             }
 
