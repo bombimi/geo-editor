@@ -9,6 +9,7 @@ export const styles = css`
     }
 
     .editor-window {
+        position: relative;
         width: 100%;
         height: 100%;
         background-color: var(--sl-color-neutral-100);
@@ -19,6 +20,8 @@ export const styles = css`
     }
 
     ds-document-renderer {
+        position: relative;
+        z-index: 0;
         width: 100%;
         display: block;
         height: 100%;
@@ -60,12 +63,14 @@ export const styles = css`
 
     .top-left-controls {
         position: absolute;
+        z-index: 20;
         left: 1em;
         top: 1em;
     }
 
     .top-right-controls {
         position: absolute;
+        z-index: 20;
         display: flex;
         gap: 0.5em;
         right: 1em;
@@ -74,6 +79,7 @@ export const styles = css`
 
     .side-right-controls {
         position: absolute;
+        z-index: 20;
         display: flex;
         flex-direction: column;
         gap: 0.5em;
@@ -109,6 +115,7 @@ export const styles = css`
 
     .left-panels {
         position: absolute;
+        z-index: 20;
         display: flex;
         flex-direction: column;
         gap: 0.5em;

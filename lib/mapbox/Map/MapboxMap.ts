@@ -505,16 +505,10 @@ export class MapboxMap extends BaseElement {
 
         try {
             const map = this.mapboxGL as any;
+            const HILLSHADE_LAYER_ID = "terrain-hillshade";
 
             if (typeof map.setProjection === "function") {
                 map.setProjection({ type: this._config.projection });
-            }
-
-            if (this._config.projection !== "globe") {
-                if (typeof map.setTerrain === "function") {
-                    map.setTerrain(null);
-                }
-                return;
             }
 
             if (!map.getSource("terrain-dem")) {
@@ -534,7 +528,21 @@ export class MapboxMap extends BaseElement {
             if (typeof map.setTerrain === "function") {
                 map.setTerrain({
                     source: "terrain-dem",
-                    exaggeration: 1.1,
+                    exaggeration: 1.8,
+                });
+            }
+
+            if (!map.getLayer(HILLSHADE_LAYER_ID)) {
+                map.addLayer({
+                    id: HILLSHADE_LAYER_ID,
+                    type: "hillshade",
+                    source: "terrain-dem",
+                    paint: {
+                        "hillshade-exaggeration": 0.1,
+                        "hillshade-shadow-color": "#27374a",
+                        "hillshade-highlight-color": "#f4f1e8",
+                        "hillshade-accent-color": "#8395ad",
+                    },
                 });
             }
         } catch (err) {
