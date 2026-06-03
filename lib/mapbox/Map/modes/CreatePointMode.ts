@@ -1,4 +1,4 @@
-import { MapMouseEvent } from "mapbox-gl";
+import { MapMouseEvent } from "maplibre-gl";
 import { createCustomEvent } from "ui-lib/Utils";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { InteractionMode } from "../InteractionMode";

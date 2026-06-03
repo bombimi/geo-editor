@@ -1,7 +1,7 @@
 import { uuidv4 } from "editor/Utils";
 import { Feature } from "geojson";
 import { cloneDeep, uniqBy } from "lodash-es";
-import { GeoJSONSource, Map as MapboxGLMap, Point } from "mapbox-gl";
+import { GeoJSONSource, Map as MapboxGLMap, Point } from "maplibre-gl";
 import { MapboxMap } from "./MapboxMap";
 import { getMapLayers } from "./MapLayers";
 
@@ -21,7 +21,7 @@ export class GeoJsonSource {
         this._mapboxGL = map.mapboxGL!;
         this._createSourceAndLayers();
         this._source = this._mapboxGL.getSource(this._name) as GeoJSONSource;
-        console.assert(this._source, `Source ${this._name} not found`);
+        console.assert(!!this._source, `Source ${this._name} not found`);
     }
 
     public clear() {
@@ -63,7 +63,14 @@ export class GeoJsonSource {
     }
 
     public featuresAtScreenLocation(point: Point): Feature[] {
-        const layers = getMapLayers(this._name).map((layer) => layer.id);
+        const layers = getMapLayers(this._name)
+            .map((layer) => layer.id)
+            .filter((layerId) => !!this._mapboxGL.getLayer(layerId));
+
+        if (layers.length === 0) {
+            return [];
+        }
+
         const features = this._mapboxGL.queryRenderedFeatures(point, {
             layers,
         });
@@ -114,6 +121,15 @@ export class GeoJsonSource {
 
         const layers = getMapLayers(this._name);
         for (const layer of layers) {
+            if (layer.enabled === false) {
+                continue;
+            }
+
+            // Defensive: maplibre throws if a layer id already exists.
+            if (this._mapboxGL.getLayer(layer.id)) {
+                continue;
+            }
+
             this._mapboxGL.addLayer(layer);
         }
     }

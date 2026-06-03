@@ -1,5 +1,5 @@
 import { Feature } from "geojson";
-import { LngLat, MapMouseEvent } from "mapbox-gl";
+import { LngLat, MapMouseEvent } from "maplibre-gl";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { InteractionMode } from "../InteractionMode";
 import { MapboxMap } from "../MapboxMap";

@@ -1,4 +1,4 @@
-import { Marker } from "mapbox-gl";
+import { LngLat, LngLatLike, Marker, MarkerOptions } from "maplibre-gl";
 import { MapMarker } from "../MapMarker";
 
 import "../MapMarker";
@@ -21,10 +21,10 @@ export class PointMarker extends Marker {
     private _dragEndHandler?: PointMarkerDragEndCallback;
 
     private _marker?: MapMarker;
-    private _originalLngLat?: mapboxgl.LngLat;
+    private _originalLngLat?: LngLat;
 
     public constructor(
-        options: mapboxgl.MarkerOptions,
+        options: MarkerOptions,
         name: string,
         public readonly guid: string
     ) {
@@ -36,6 +36,13 @@ export class PointMarker extends Marker {
         options.anchor = "left";
         super(options);
         this._marker = elem as MapMarker;
+
+        elem.addEventListener("click", () => {
+            if (this._clickHandler) {
+                this._clickHandler({ marker: this });
+            }
+        });
+
         this.on("dragstart", () => {
             this._originalLngLat = this.getLngLat();
         });
@@ -62,7 +69,7 @@ export class PointMarker extends Marker {
         return this;
     }
 
-    public override setLngLat(lnglat: mapboxgl.LngLatLike): this {
+    public override setLngLat(lnglat: LngLatLike): this {
         super.setLngLat(lnglat);
         return this;
     }
@@ -80,17 +87,5 @@ export class PointMarker extends Marker {
     public onDragEnd(callback: PointMarkerDragEndCallback): this {
         this._dragEndHandler = callback;
         return this;
-    }
-
-    override _onMapClick(e: mapboxgl.MapMouseEvent): void {
-        const targetElement = e.originalEvent.target;
-        const element = this._element;
-
-        if (
-            this._clickHandler &&
-            (targetElement === element || element.contains(targetElement as Node))
-        ) {
-            this._clickHandler({ marker: this });
-        }
     }
 }

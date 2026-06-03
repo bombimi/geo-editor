@@ -4,7 +4,11 @@ import { customElement, property, query, state } from "lit/decorators.js";
 import { styles } from "./MapboxMap.style";
 
 import { merge } from "lodash-es";
-import mapboxgl, { Map as MapboxGLMap, MapMouseEvent } from "mapbox-gl";
+import mapboxgl, {
+    Map as MapboxGLMap,
+    MapMouseEvent,
+    StyleSpecification,
+} from "maplibre-gl";
 
 import { checkIsCircle } from "geo/objects/CircleObject";
 import { checkIsRectangle } from "geo/objects/RectangleObject";
@@ -23,7 +27,17 @@ import { PolygonEditMode } from "./modes/PolygonEditMode";
 import { RectangleEditMode } from "./modes/RectangleEditMode";
 import { SelectMode } from "./modes/SelectMode";
 
-export type MapConfig = ReturnType<typeof makeConfig>;
+export type MapConfig = {
+    map: {
+        zoom: number;
+        center: number[];
+        pitch: number;
+        bearing: number;
+    };
+    style: string | StyleSpecification;
+    projection: "mercator" | "globe";
+    keys: MapConfigKeys;
+};
 
 export type MapConfigKeys = {
     mapbox: string;
@@ -35,7 +49,32 @@ function defaultMapConfigKeys(): MapConfigKeys {
     };
 }
 
-function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
+function defaultStyle(): StyleSpecification {
+    return {
+        version: 8 as const,
+        sources: {
+            osm: {
+                type: "raster" as const,
+                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+                tileSize: 256,
+                attribution:
+                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+                maxzoom: 19,
+            },
+        },
+        layers: [
+            {
+                id: "osm",
+                type: "raster" as const,
+                source: "osm",
+            },
+        ],
+    };
+}
+
+function makeConfig(
+    apiKeys: MapConfigKeys = defaultMapConfigKeys()
+): MapConfig {
     return {
         map: {
             zoom: 3,
@@ -43,8 +82,8 @@ function makeConfig(apiKeys: MapConfigKeys = defaultMapConfigKeys()) {
             pitch: 0,
             bearing: 0,
         },
-        style: "mapbox://styles/mapbox/standard-satellite",
-        projection: "globe",
+        style: defaultStyle(),
+        projection: "mercator",
         keys: apiKeys,
     };
 }
@@ -296,16 +335,14 @@ export class MapboxMap extends BaseElement {
 
     private async _loadImage(name: string) {
         const url = `/map-icons/${name}.png`;
-        return new Promise((resolve, reject) => {
-            this.mapboxGL?.loadImage(url, (error, image) => {
-                if (error) {
-                    reject(error);
-                } else if (image) {
-                    this.mapboxGL?.addImage(name, image);
-                    resolve(image);
-                }
-            });
-        });
+        if (!this.mapboxGL) {
+            return;
+        }
+
+        const image = await this.mapboxGL.loadImage(url);
+        if (image?.data) {
+            this.mapboxGL.addImage(name, image.data);
+        }
     }
 
     private async _initMapbox(): Promise<void> {
@@ -317,7 +354,6 @@ export class MapboxMap extends BaseElement {
             this.mapboxGL = new MapboxGLMap({
                 container: this._mapContainer,
                 style: this._config.style,
-                projection: this._config.projection,
                 center: [
                     this._config?.map.center[0],
                     this._config?.map.center[1],
@@ -356,9 +392,6 @@ export class MapboxMap extends BaseElement {
             return;
         }
 
-        if (this._config.keys) {
-            mapboxgl.accessToken = this._config.keys.mapbox;
-        }
         if (this.mapboxGL) {
             this.mapboxGL.remove();
             this.mapboxGL = undefined;

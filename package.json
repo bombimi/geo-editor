@@ -83,6 +83,7 @@
         "loglevel-plugin-prefix": "^0.8.4",
         "luxon": "^3.5.0",
         "mapbox-gl": "^3.11.0",
+        "maplibre-gl": "^5.6.0",
         "npm-watch": "^0.13.0",
         "object-hash": "^3.0.0",
         "prettier": "^3.3.3",

@@ -1,7 +1,7 @@
 import { InteractionMode } from "../InteractionMode";
 
 import { SelectionSet } from "editor/SelectionSet";
-import { MapMouseEvent, Point } from "mapbox-gl";
+import { MapMouseEvent, Point } from "maplibre-gl";
 import { createCustomEvent } from "ui-lib/Utils";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";

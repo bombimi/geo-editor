@@ -7,7 +7,7 @@ import {
 } from "geo/objects/CircleObject";
 import { Feature } from "geojson";
 import { cloneDeep } from "lodash-es";
-import { LngLat, MapMouseEvent } from "mapbox-gl";
+import { LngLat, MapMouseEvent } from "maplibre-gl";
 import { StateMachine } from "state-machine/dist/state-machine.js";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
@@ -73,7 +73,7 @@ export class CircleEditMode extends FsmEditorMode {
                 ) => {
                     console.log("CircleEditMode: dragRadius@mouse_move");
                     console.assert(
-                        this._circle,
+                        !!this._circle,
                         "CircleEditMode: _circle is not set in dragRadius state"
                     );
 
@@ -106,7 +106,7 @@ export class CircleEditMode extends FsmEditorMode {
                 ) => {
                     console.log("CircleEditMode: getRadius@mouse_move");
                     console.assert(
-                        this._potentialCenterPos,
+                        !!this._potentialCenterPos,
                         "CircleEditMode: _potentialCenterPos is not set in getRadius state"
                     );
                     if (this._potentialCenterPos) {

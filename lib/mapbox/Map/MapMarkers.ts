@@ -1,5 +1,5 @@
 import { Feature, Geometry } from "geojson";
-import { MarkerOptions } from "mapbox-gl";
+import { MarkerOptions } from "maplibre-gl";
 import { MapboxMap } from "./MapboxMap";
 import {
     PointMarker,

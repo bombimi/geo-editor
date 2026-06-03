@@ -6,7 +6,7 @@ import {
 } from "geo/objects/RectangleObject";
 import { Feature } from "geojson";
 import { cloneDeep } from "lodash-es";
-import { LngLat, MapMouseEvent } from "mapbox-gl";
+import { LngLat, MapMouseEvent } from "maplibre-gl";
 import { StateMachine } from "state-machine/dist/state-machine.js";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
@@ -74,7 +74,7 @@ export class RectangleEditMode extends FsmEditorMode {
                         "RectangleEditMode: dragSecondPoint@mouse_move"
                     );
                     console.assert(
-                        this._rect,
+                        !!this._rect,
                         "RectangleEditMode: _rect is not set in dragSecondPoint state"
                     );
 
@@ -111,7 +111,7 @@ export class RectangleEditMode extends FsmEditorMode {
                 ) => {
                     console.log("RectangleEditMode: getSecondPoint@mouse_move");
                     console.assert(
-                        this._firstPoint,
+                        !!this._firstPoint,
                         "RectangleEditMode: _firstPoint is not set in getSecondPoint state"
                     );
                     if (this._firstPoint) {

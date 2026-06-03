@@ -1,5 +1,5 @@
 import { GeoDocument } from "geo/GeoDocument";
-import { LngLat, Point } from "mapbox-gl";
+import { LngLat, Point } from "maplibre-gl";
 import { StateMachine } from "state-machine/dist/state-machine.js";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";

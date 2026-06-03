@@ -4,7 +4,7 @@ import { GeoDocument } from "geo/GeoDocument";
 import { GeoObject } from "geo/GeoObject";
 import { Factory } from "geo/objects/Factory";
 import { debounce } from "lodash-es";
-import { LngLat, MapMouseEvent, Point } from "mapbox-gl";
+import { LngLat, MapMouseEvent, Point } from "maplibre-gl";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
 import { SelectMode } from "./SelectMode";

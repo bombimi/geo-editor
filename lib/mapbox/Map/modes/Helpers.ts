@@ -1,7 +1,7 @@
 import { point } from "@turf/helpers";
 import { Feature, GeoJsonProperties, Point, Position } from "geojson";
 import { groupBy } from "lodash-es";
-import { Point as MapboxGLPoint } from "mapbox-gl";
+import { Point as MapboxGLPoint } from "maplibre-gl";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { VertexStyle } from "./EditStyles";
 

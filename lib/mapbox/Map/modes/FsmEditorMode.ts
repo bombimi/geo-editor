@@ -1,5 +1,5 @@
 import { Feature } from "geojson";
-import { LngLat, MapMouseEvent } from "mapbox-gl";
+import { LngLat, MapMouseEvent } from "maplibre-gl";
 import { StateMachine } from "state-machine/dist/state-machine.js";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";

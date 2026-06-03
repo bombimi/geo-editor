@@ -2,7 +2,7 @@ import { featureCollection, lineString } from "@turf/helpers";
 import { uuidv4 } from "editor/Utils";
 import { Feature, GeoJsonProperties, LineString, Position } from "geojson";
 import { cloneDeep } from "lodash-es";
-import { LngLat, MapMouseEvent } from "mapbox-gl";
+import { LngLat, MapMouseEvent } from "maplibre-gl";
 import { StateMachine } from "state-machine/dist/state-machine.js";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";

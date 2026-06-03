@@ -1,7 +1,42 @@
 const DEFAULT_FILL_COLOR = "#e8e8e8";
-const DEFAULT_LINE_COLOR = DEFAULT_FILL_COLOR;
+const DEFAULT_LINE_COLOR = "#555555";
 const DEFAULT_SELECTION_COLOR = "#FFFF00";
 const DEFAULT_FILL_OPACITY = 0.5;
+const DEFAULT_LINE_WIDTH = 2;
+const DEFAULT_STANDALONE_LINE_WIDTH = 8;
+const DEFAULT_LINE_OPACITY = 1;
+
+const LINE_COLOR_EXPR = [
+    "coalesce",
+    ["get", "stroke"],
+    ["get", "line-color"],
+    ["get", "color"],
+    DEFAULT_LINE_COLOR,
+];
+
+const LINE_WIDTH_EXPR = [
+    "to-number",
+    [
+        "coalesce",
+        ["get", "stroke-width"],
+        ["get", "line-width"],
+        ["get", "width"],
+        DEFAULT_LINE_WIDTH,
+    ],
+    DEFAULT_LINE_WIDTH,
+];
+
+const LINE_OPACITY_EXPR = [
+    "to-number",
+    [
+        "coalesce",
+        ["get", "stroke-opacity"],
+        ["get", "line-opacity"],
+        ["get", "opacity"],
+        DEFAULT_LINE_OPACITY,
+    ],
+    DEFAULT_LINE_OPACITY,
+];
 
 const MapLayers: any[] = [
     {
@@ -20,9 +55,9 @@ const MapLayers: any[] = [
         type: "line",
         source: "map-data",
         paint: {
-            "line-color": ["coalesce", ["get", "stroke"], DEFAULT_LINE_COLOR],
-            "line-width": ["coalesce", ["get", "stroke-width"], 2],
-            "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
+            "line-color": LINE_COLOR_EXPR,
+            "line-width": LINE_WIDTH_EXPR,
+            "line-opacity": LINE_OPACITY_EXPR,
         },
         filter: ["==", ["geometry-type"], "Polygon"],
     },
@@ -31,10 +66,24 @@ const MapLayers: any[] = [
         type: "line",
         source: "map-data",
         paint: {
-            "line-color": ["coalesce", ["get", "stroke"], DEFAULT_LINE_COLOR],
-            "line-width": ["coalesce", ["get", "stroke-width"], 8],
-            "line-opacity": ["coalesce", ["get", "stroke-opacity"], 1],
-            "line-dasharray": ["coalesce", ["get", "line-dasharray"], [1]],
+            "line-color": LINE_COLOR_EXPR,
+            "line-width": [
+                "to-number",
+                [
+                    "coalesce",
+                    ["get", "stroke-width"],
+                    ["get", "line-width"],
+                    ["get", "width"],
+                    DEFAULT_STANDALONE_LINE_WIDTH,
+                ],
+                DEFAULT_STANDALONE_LINE_WIDTH,
+            ],
+            "line-opacity": LINE_OPACITY_EXPR,
+            "line-dasharray": [
+                "coalesce",
+                ["get", "line-dasharray"],
+                ["literal", [1]],
+            ],
         },
         filter: ["==", ["geometry-type"], "LineString"],
     },

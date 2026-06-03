@@ -1,4 +1,4 @@
-import { MapMouseEvent } from "mapbox-gl";
+import { MapMouseEvent } from "maplibre-gl";
 import { GeoJsonSource } from "../GeoJsonSource";
 import { MapboxMap } from "../MapboxMap";
 import { SelectMode } from "./SelectMode";
