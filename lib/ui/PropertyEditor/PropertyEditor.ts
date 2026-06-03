@@ -10,7 +10,7 @@ import { choose } from "lit/directives/choose.js";
 import { classMap } from "lit/directives/class-map.js";
 import { ifDefined } from "lit/directives/if-defined.js";
 
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
 import { debounce } from "lodash-es";
@@ -70,6 +70,7 @@ export class PropertyEditor extends EditorElement {
     static override styles = [styles];
 
     @state() protected _numSelectedItems = 0;
+    @property({ type: Boolean }) showMetaProperties = false;
     @state() protected _mergedProperties: DocumentProperty[] = [];
     @state() protected _currentObjects: DocumentObject[] = [];
     @state() protected _addPropertyDropdown?: TemplateResult;
@@ -303,6 +304,18 @@ export class PropertyEditor extends EditorElement {
         );
     }
 
+    private _isMetaProperty(property: DocumentProperty) {
+        return property.name.startsWith("__meta_");
+    }
+
+    private _getVisibleProperties() {
+        if (this.showMetaProperties) {
+            return this._mergedProperties;
+        }
+
+        return this._mergedProperties.filter((p) => !this._isMetaProperty(p));
+    }
+
     private _createPropertyDropdown(
         icon: string,
         keep: (prop: DocumentProperty) => boolean,
@@ -383,7 +396,7 @@ export class PropertyEditor extends EditorElement {
                 <div class="main">
                     <!-- Main content goes here -->
                     <div class="two-column-grid">
-                        ${this._mergedProperties.map(
+                        ${this._getVisibleProperties().map(
                             (property) => html`
                                 <span
                                     class=${classMap({
@@ -399,6 +412,24 @@ export class PropertyEditor extends EditorElement {
                 </div>
                 <footer class="footer">
                     <span>Num selected : ${this._numSelectedItems}</span>
+                    <sl-icon-button
+                        class=${classMap({ active: this.showMetaProperties })}
+                        name="info-circle"
+                        label="Toggle metadata properties"
+                        title="Toggle metadata properties"
+                        @click=${() => {
+                            this.dispatchEvent(
+                                new CustomEvent(
+                                    "show-meta-properties-changed",
+                                    {
+                                        detail: !this.showMetaProperties,
+                                        bubbles: true,
+                                        composed: true,
+                                    }
+                                )
+                            );
+                        }}
+                    ></sl-icon-button>
                 </footer>
             </div>
         `;

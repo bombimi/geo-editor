@@ -1,17 +1,17 @@
-import "@shoelace-style/shoelace/dist/components/tree/tree.js";
-import "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js";
 import "@shoelace-style/shoelace/dist/components/icon/icon.js";
+import "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js";
+import "@shoelace-style/shoelace/dist/components/tree/tree.js";
 
 import { html, HTMLTemplateResult } from "lit";
-import { customElement, state } from "lit/decorators.js";
+import { customElement, property, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
-import { styles } from "./DocumentObjectTree.style";
-import { Document } from "../../editor/Document";
-import { watch } from "../../ui-utils/watch";
-import { DocumentObject } from "../../editor/DocumentObject";
 import SlTreeItem from "@shoelace-style/shoelace/dist/components/tree-item/tree-item.js";
+import { Document } from "../../editor/Document";
+import { DocumentObject } from "../../editor/DocumentObject";
 import { SelectionSet } from "../../editor/SelectionSet";
+import { watch } from "../../ui-utils/watch";
+import { styles } from "./DocumentObjectTree.style";
 
 function typeToIcon(type: string) {
     switch (type) {
@@ -29,6 +29,7 @@ export class DocumentObjectTree extends EditorElement {
 
     @state() protected _document: Document | null = null;
     @state() protected _tree?: HTMLTemplateResult;
+    @property({ type: Boolean }) showMetaProperties = false;
     private _selectionSet = new SelectionSet();
 
     @watch("_document")
@@ -39,13 +40,23 @@ export class DocumentObjectTree extends EditorElement {
         }
     }
 
+    @watch("showMetaProperties")
+    _onShowMetaPropertiesChange() {
+        this._makeTree();
+    }
+
     protected override _selectionSetChanged() {
         if (this._editor) {
             if (!this._selectionSet.isEqual(this._editor.selectionSet)) {
                 this._clearSelectionClasses();
-                const firstItem = this._setSelectionClasses(this._editor.selectionSet.toArray());
+                const firstItem = this._setSelectionClasses(
+                    this._editor.selectionSet.toArray()
+                );
                 if (firstItem) {
-                    firstItem.scrollIntoView({ block: "center", behavior: "smooth" });
+                    firstItem.scrollIntoView({
+                        block: "center",
+                        behavior: "smooth",
+                    });
                 }
                 this._selectionSet = this._editor.selectionSet.clone();
             }
@@ -95,6 +106,9 @@ export class DocumentObjectTree extends EditorElement {
         if (this._editor) {
             const item = e.target as SlTreeItem;
             const guid = item.dataset.guid as string;
+            if (!guid) {
+                return;
+            }
             const control = e.ctrlKey || e.metaKey;
             if (!control) {
                 this._clearSelectionClasses();
@@ -120,9 +134,16 @@ export class DocumentObjectTree extends EditorElement {
                 .name=${typeToIcon(object.type).name}
             >
             </sl-icon>
-            ${object.type === "root" ? object.displayName : `${object.displayType}`}
+            ${object.type === "root"
+                ? object.displayName
+                : `${object.displayType}`}
             ${object.properties
-                .filter((p) => !["type"].includes(p.name))
+                .filter(
+                    (p) =>
+                        !["type"].includes(p.name) &&
+                        (this.showMetaProperties ||
+                            !p.name.startsWith("__meta_"))
+                )
                 .map(
                     (p) =>
                         html`<sl-tree-item
@@ -148,6 +169,6 @@ export class DocumentObjectTree extends EditorElement {
     }
 
     override render() {
-        return html`${this._tree}`;
+        return html`<div class="container">${this._tree}</div>`;
     }
 }

@@ -5,6 +5,7 @@ export const styles = css`
     ${Style}
     :host {
         display: block;
+        height: 100%;
         background-color: var(--sl-color-neutral-0);
         color: var(--sl-color-neutral-900);
     }
@@ -13,10 +14,12 @@ export const styles = css`
         display: flex;
         flex-direction: column;
         height: 100%;
+        min-height: 0;
     }
 
     .main {
         flex: 1;
+        min-height: 0;
         overflow: auto;
         padding: var(--ds-padding);
     }
@@ -35,15 +38,26 @@ export const styles = css`
     .header-controls {
         display: flex;
         gap: 0.5rem;
+        align-items: center;
+    }
+
+    .header-controls sl-icon-button.active {
+        color: var(--sl-color-primary-500);
     }
 
     .footer {
         flex-shrink: 0;
         background: #f1f1f1;
         padding: 1rem;
-        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         color: var(--ds-panel-color);
         background-color: var(--ds-panel-background-color);
+    }
+
+    .footer sl-icon-button.active {
+        color: var(--sl-color-primary-500);
     }
 
     .two-column-grid {
