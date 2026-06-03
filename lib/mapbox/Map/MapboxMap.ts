@@ -31,7 +31,7 @@ export type MapConfigKeys = {
 
 function defaultMapConfigKeys(): MapConfigKeys {
     return {
-        mapbox: "pk.eyJ1IjoibWFydGluLXNsYXRlciIsImEiOiJjbTkzeHBqaTkwcW5sMmxxMW5oeTA2cjk2In0.VJ1BVbaN59wDTq6J0BLYIw",
+        mapbox: "",
     };
 }
 
