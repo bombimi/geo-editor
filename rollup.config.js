@@ -29,6 +29,7 @@ const SHOELACE_ICONS = [
     "arrow-clockwise",
     "moon-fill",
     "moon",
+    "globe",
     "app",
     "arrows-move",
     "trash3",

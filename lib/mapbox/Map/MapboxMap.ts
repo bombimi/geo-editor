@@ -39,6 +39,27 @@ export type MapConfig = {
     keys: MapConfigKeys;
 };
 
+export type MapCameraState = {
+    center: [number, number];
+    zoom: number;
+    pitch: number;
+    bearing: number;
+};
+
+function cameraStateEqual(
+    a: MapCameraState,
+    b: MapCameraState,
+    epsilon = 1e-7
+): boolean {
+    return (
+        Math.abs(a.center[0] - b.center[0]) <= epsilon &&
+        Math.abs(a.center[1] - b.center[1]) <= epsilon &&
+        Math.abs(a.zoom - b.zoom) <= epsilon &&
+        Math.abs(a.pitch - b.pitch) <= epsilon &&
+        Math.abs(a.bearing - b.bearing) <= epsilon
+    );
+}
+
 export type MapConfigKeys = {
     mapbox: string;
 };
@@ -49,27 +70,9 @@ function defaultMapConfigKeys(): MapConfigKeys {
     };
 }
 
-function defaultStyle(): StyleSpecification {
-    return {
-        version: 8 as const,
-        sources: {
-            osm: {
-                type: "raster" as const,
-                tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-                tileSize: 256,
-                attribution:
-                    '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
-                maxzoom: 19,
-            },
-        },
-        layers: [
-            {
-                id: "osm",
-                type: "raster" as const,
-                source: "osm",
-            },
-        ],
-    };
+function defaultStyle(): string | StyleSpecification {
+    // Public demo style from MapLibre that supports vector rendering.
+    return "https://demotiles.maplibre.org/style.json";
 }
 
 function makeConfig(
@@ -79,11 +82,11 @@ function makeConfig(
         map: {
             zoom: 3,
             center: [0, 0],
-            pitch: 0,
+            pitch: 45,
             bearing: 0,
         },
         style: defaultStyle(),
-        projection: "mercator",
+        projection: "globe",
         keys: apiKeys,
     };
 }
@@ -116,6 +119,7 @@ export class MapboxMap extends BaseElement {
     private _geoEditLayer?: GeoJsonSource;
 
     private _interactionMode?: InteractionMode;
+    private _lastGlobePitch = 45;
 
     // we need to load the css before we can create the map
     @state() protected _cssLoaded = false;
@@ -158,6 +162,52 @@ export class MapboxMap extends BaseElement {
         }
     }
 
+    public get projection(): "mercator" | "globe" {
+        return this._config.projection;
+    }
+
+    public setProjection(projection: "mercator" | "globe") {
+        const currentPitch = this._config.map.pitch;
+        if (projection === "mercator" && currentPitch > 0) {
+            this._lastGlobePitch = currentPitch;
+        }
+
+        const targetPitch =
+            projection === "mercator"
+                ? 0
+                : this._lastGlobePitch > 0
+                  ? this._lastGlobePitch
+                  : 45;
+
+        if (
+            this._config.projection === projection &&
+            Math.abs(this._config.map.pitch - targetPitch) <= 1e-7
+        ) {
+            return;
+        }
+
+        this._config = {
+            ...this._config,
+            map: {
+                ...this._config.map,
+                pitch: targetPitch,
+            },
+            projection,
+        };
+
+        if (this.mapboxGL) {
+            this.mapboxGL.easeTo({ pitch: targetPitch, duration: 250 });
+        }
+
+        this._applyProjectionAndTerrain();
+    }
+
+    public toggleProjection() {
+        this.setProjection(
+            this._config.projection === "globe" ? "mercator" : "globe"
+        );
+    }
+
     public fitBounds(ne: Location, sw: Location) {
         if (this.mapboxGL) {
             const bb = new mapboxgl.LngLatBounds(
@@ -166,6 +216,56 @@ export class MapboxMap extends BaseElement {
             );
             this.mapboxGL.fitBounds(bb, {
                 padding: 20,
+            });
+        }
+    }
+
+    public getCamera(): MapCameraState {
+        if (this.mapboxGL) {
+            const center = this.mapboxGL.getCenter();
+            return {
+                center: [center.lng, center.lat],
+                zoom: this.mapboxGL.getZoom(),
+                pitch: this.mapboxGL.getPitch(),
+                bearing: this.mapboxGL.getBearing(),
+            };
+        }
+
+        return {
+            center: [this._config.map.center[0], this._config.map.center[1]],
+            zoom: this._config.map.zoom,
+            pitch: this._config.map.pitch,
+            bearing: this._config.map.bearing,
+        };
+    }
+
+    public setCamera(camera: MapCameraState) {
+        const currentCamera = this.getCamera();
+        if (cameraStateEqual(currentCamera, camera)) {
+            return;
+        }
+
+        if (this._config.projection === "globe" && camera.pitch > 0) {
+            this._lastGlobePitch = camera.pitch;
+        }
+
+        this._config = {
+            ...this._config,
+            map: {
+                ...this._config.map,
+                center: [camera.center[0], camera.center[1]],
+                zoom: camera.zoom,
+                pitch: camera.pitch,
+                bearing: camera.bearing,
+            },
+        };
+
+        if (this.mapboxGL) {
+            this.mapboxGL.jumpTo({
+                center: camera.center,
+                zoom: camera.zoom,
+                pitch: camera.pitch,
+                bearing: camera.bearing,
             });
         }
     }
@@ -379,12 +479,68 @@ export class MapboxMap extends BaseElement {
                 });
             }
 
-            this.mapboxGL.on("load", () => {
+            this.mapboxGL.on("moveend", () => {
+                this.dispatchEvent(
+                    new CustomEvent("camera-changed", {
+                        bubbles: true,
+                        composed: true,
+                        detail: this.getCamera(),
+                    })
+                );
+            });
+
+            this.mapboxGL.on("load", async () => {
+                await this._applyProjectionAndTerrain();
                 this._geoLayer = new GeoJsonSource(this, "map-data");
                 this._geoEditLayer = new GeoJsonSource(this, "map-edit");
                 resolve();
             });
         });
+    }
+
+    private async _applyProjectionAndTerrain() {
+        if (!this.mapboxGL) {
+            return;
+        }
+
+        try {
+            const map = this.mapboxGL as any;
+
+            if (typeof map.setProjection === "function") {
+                map.setProjection({ type: this._config.projection });
+            }
+
+            if (this._config.projection !== "globe") {
+                if (typeof map.setTerrain === "function") {
+                    map.setTerrain(null);
+                }
+                return;
+            }
+
+            if (!map.getSource("terrain-dem")) {
+                map.addSource("terrain-dem", {
+                    type: "raster-dem",
+                    tiles: [
+                        "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png",
+                    ],
+                    tileSize: 256,
+                    maxzoom: 15,
+                    encoding: "terrarium",
+                    attribution:
+                        'DEM © <a href="https://registry.opendata.aws/terrain-tiles/">Mapzen / OpenTopography / AWS Public Dataset</a>',
+                });
+            }
+
+            if (typeof map.setTerrain === "function") {
+                map.setTerrain({
+                    source: "terrain-dem",
+                    exaggeration: 1.1,
+                });
+            }
+        } catch (err) {
+            // Keep map usable when globe/terrain is unsupported by runtime.
+            console.warn("Unable to enable globe/terrain prototype", err);
+        }
     }
 
     private async _initMap() {

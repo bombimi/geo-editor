@@ -1,4 +1,4 @@
-import { html } from "lit";
+import { html, PropertyValues } from "lit";
 import { customElement, property, query, state } from "lit/decorators.js";
 import { EditorElement } from "../EditorElement";
 
@@ -15,6 +15,7 @@ import "../../mapbox/Map/MapboxMap";
 import {
     InteractionModes,
     MapboxMap,
+    MapCameraState,
     ModeFeaturePair,
 } from "../../mapbox/Map/MapboxMap";
 import { StarsStyle } from "./Stars.style";
@@ -24,6 +25,8 @@ export class GeoDocumentRenderer extends EditorElement {
     static override styles = [styles, StarsStyle];
 
     @property({ type: Object }) mode: ModeFeaturePair = { mode: "select" };
+    @property({ type: String }) projection: "mercator" | "globe" = "globe";
+    @property({ type: Object }) camera?: MapCameraState;
     @state() private _selectionSet: string[] = [];
 
     private _bounds?: Bounds;
@@ -61,6 +64,24 @@ export class GeoDocumentRenderer extends EditorElement {
         }
     }
 
+    public setProjection(projection: "mercator" | "globe") {
+        if (this.projection === projection) {
+            return;
+        }
+
+        this.projection = projection;
+        this._map?.setProjection(projection);
+    }
+
+    public toggleProjection() {
+        this.setProjection(this.projection === "globe" ? "mercator" : "globe");
+    }
+
+    public setCamera(camera: MapCameraState) {
+        this.camera = camera;
+        this._map?.setCamera(camera);
+    }
+
     public fitToBounds() {
         if (this._map && this._bounds) {
             this._map.fitBounds(this._bounds.ne, this._bounds.sw);
@@ -72,14 +93,14 @@ export class GeoDocumentRenderer extends EditorElement {
         this._editorInit();
     }
 
-    private _editorInit() {
+    private _editorInit(options: { fitToBounds?: boolean } = {}) {
         if (this._editor && this._map) {
             this._editor.document?.onChanged.add(() => {
                 if (this._editor) {
                     this._setGeo();
                 }
             });
-            this._setGeo({ fitToBounds: true });
+            this._setGeo({ fitToBounds: options.fitToBounds });
         }
     }
 
@@ -111,15 +132,45 @@ export class GeoDocumentRenderer extends EditorElement {
         }
     }
 
+    protected override updated(_args: PropertyValues): void {
+        super.updated(_args);
+        if (_args.has("projection")) {
+            this._map?.setProjection(this.projection);
+        }
+        if (_args.has("camera") && this.camera) {
+            this._map?.setCamera(this.camera);
+        }
+    }
+
     override render() {
         return html`<div class="container">
-            <div id="stars"></div>
-            <div id="stars2"></div>
-            <div id="stars3"></div>
+            ${this.projection === "globe"
+                ? html`
+                      <div id="stars"></div>
+                      <div id="stars2"></div>
+                      <div id="stars3"></div>
+                  `
+                : null}
             <ds-map
                 id="map"
                 .selectionSet=${this._selectionSet}
-                @map-loaded=${() => this._editorInit()}
+                @map-loaded=${() => {
+                    this._editorInit({ fitToBounds: !this.camera });
+                    this._map?.setProjection(this.projection);
+                    if (this.camera) {
+                        this._map?.setCamera(this.camera);
+                    }
+                }}
+                @camera-changed=${(e: CustomEvent<MapCameraState>) => {
+                    this.camera = e.detail;
+                    this.dispatchEvent(
+                        new CustomEvent("camera-changed", {
+                            detail: e.detail,
+                            bubbles: true,
+                            composed: true,
+                        })
+                    );
+                }}
                 @update-feature=${(e: CustomEvent) => {
                     if (this._editor) {
                         this._editor.applyCommand(

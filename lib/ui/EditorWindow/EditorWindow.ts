@@ -33,7 +33,7 @@ import { DeleteObjectCommand } from "editor/commands/DeleteObjectCommand";
 import { GeoObject } from "geo/GeoObject";
 import { Feature } from "geojson";
 import { debounce } from "lodash-es";
-import { InteractionModes } from "mapbox/Map";
+import { InteractionModes, MapCameraState } from "mapbox/Map";
 import { saveTextToFile, showToast } from "ui-lib/Utils";
 import "../DocumentEditor";
 import "../DocumentHistory";
@@ -105,6 +105,9 @@ const EditorWindowModes: ModeT[] = [
     },
 ];
 
+const PROJECTION_STORAGE_KEY = "mapProjection";
+const CAMERA_STORAGE_KEY = "mapCamera";
+
 @customElement("ds-editor-window")
 export class EditorWindow extends EditorElement {
     static override styles = [styles];
@@ -116,6 +119,8 @@ export class EditorWindow extends EditorElement {
     @state() protected _deleteEnabled = false;
     @state() protected _currentSelectionSet: string[] = [];
     @state() protected _currentMode: InteractionModes = "select";
+    @state() protected _projection: "mercator" | "globe" = "globe";
+    @state() protected _camera?: MapCameraState;
     @state() protected _dropping = false;
 
     @query("ds-document-renderer")
@@ -195,6 +200,38 @@ export class EditorWindow extends EditorElement {
     override connectedCallback() {
         super.connectedCallback();
         this._darkMode = document.body.classList.contains("sl-theme-dark");
+
+        const savedProjection = window.localStorage.getItem(
+            PROJECTION_STORAGE_KEY
+        );
+        if (savedProjection === "globe" || savedProjection === "mercator") {
+            this._projection = savedProjection;
+        }
+
+        const savedCamera = window.localStorage.getItem(CAMERA_STORAGE_KEY);
+        if (savedCamera) {
+            try {
+                const parsed = JSON.parse(savedCamera) as MapCameraState;
+                if (
+                    parsed &&
+                    Array.isArray(parsed.center) &&
+                    parsed.center.length === 2 &&
+                    typeof parsed.zoom === "number" &&
+                    typeof parsed.pitch === "number" &&
+                    typeof parsed.bearing === "number"
+                ) {
+                    this._camera = {
+                        center: [parsed.center[0], parsed.center[1]],
+                        zoom: parsed.zoom,
+                        pitch: parsed.pitch,
+                        bearing: parsed.bearing,
+                    };
+                }
+            } catch (_err) {
+                // Ignore malformed local storage values.
+            }
+        }
+
         window.addEventListener("keydown", this._boundHandleKeyDown);
     }
 
@@ -205,6 +242,7 @@ export class EditorWindow extends EditorElement {
 
     protected override firstUpdated(_changedProperties: PropertyValues): void {
         super.firstUpdated(_changedProperties);
+        this._applyProjectionToRenderer();
 
         // load the last document from local storage if it exists
         let lastDoc = window.localStorage.getItem("lastDocument");
@@ -255,6 +293,13 @@ export class EditorWindow extends EditorElement {
         }
     }
 
+    protected override updated(_changedProperties: PropertyValues): void {
+        super.updated(_changedProperties);
+        if (_changedProperties.has("_projection")) {
+            this._applyProjectionToRenderer();
+        }
+    }
+
     private async _saveCurrentState() {
         if (this._editor && this._document) {
             const saved = await this._document.save("geojson");
@@ -274,6 +319,22 @@ export class EditorWindow extends EditorElement {
             .getElementsByTagName("body")[0]
             ?.classList.toggle("sl-theme-dark");
         this.requestUpdate();
+    }
+
+    private _setProjection(projection: "mercator" | "globe") {
+        this._projection = projection;
+        window.localStorage.setItem(PROJECTION_STORAGE_KEY, projection);
+        this._documentRenderer?.setProjection(projection);
+    }
+
+    private _applyProjectionToRenderer() {
+        this._documentRenderer?.setProjection(this._projection);
+    }
+
+    private _toggleProjection() {
+        this._setProjection(
+            this._projection === "globe" ? "mercator" : "globe"
+        );
     }
 
     private _updateUndoRedo(args: UndoBufferEventArgs) {
@@ -465,6 +526,15 @@ export class EditorWindow extends EditorElement {
             ${this._document
                 ? html`<ds-document-renderer
                       .editorGuid=${this._editor?.guid}
+                      .projection=${this._projection}
+                      .camera=${this._camera}
+                      @camera-changed=${(e: CustomEvent<MapCameraState>) => {
+                          this._camera = e.detail;
+                          window.localStorage.setItem(
+                              CAMERA_STORAGE_KEY,
+                              JSON.stringify(e.detail)
+                          );
+                      }}
                   ></ds-document-renderer>`
                 : html`<div class="no-document-container">
                       <div class="no-document-inner">
@@ -524,6 +594,20 @@ export class EditorWindow extends EditorElement {
                         .name=${this._darkMode ? "moon-fill" : "moon"}
                         @click=${() => this._toggleDarkMode()}
                     ></sl-icon-button>
+                    <sl-tooltip
+                        content=${this._projection === "globe"
+                            ? "Switch to mercator"
+                            : "Switch to globe"}
+                    >
+                        <sl-icon-button
+                            class=${classMap({
+                                active: this._projection === "globe",
+                            })}
+                            name="globe"
+                            ?disabled=${this._document === null}
+                            @click=${() => this._toggleProjection()}
+                        ></sl-icon-button>
+                    </sl-tooltip>
                     <sl-icon-button
                         name="plus"
                         ?disabled=${this._document === null}
