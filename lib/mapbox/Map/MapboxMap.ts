@@ -167,17 +167,7 @@ export class MapboxMap extends BaseElement {
     }
 
     public setProjection(projection: "mercator" | "globe") {
-        const currentPitch = this._config.map.pitch;
-        if (projection === "mercator" && currentPitch > 0) {
-            this._lastGlobePitch = currentPitch;
-        }
-
-        const targetPitch =
-            projection === "mercator"
-                ? 0
-                : this._lastGlobePitch > 0
-                  ? this._lastGlobePitch
-                  : 45;
+        const targetPitch = 0;
 
         if (
             this._config.projection === projection &&
@@ -240,32 +230,39 @@ export class MapboxMap extends BaseElement {
     }
 
     public setCamera(camera: MapCameraState) {
-        const currentCamera = this.getCamera();
-        if (cameraStateEqual(currentCamera, camera)) {
-            return;
-        }
+        const normalizedCamera: MapCameraState =
+            this._config.projection === "globe"
+                ? {
+                      ...camera,
+                      pitch: 0,
+                  }
+                : camera;
 
-        if (this._config.projection === "globe" && camera.pitch > 0) {
-            this._lastGlobePitch = camera.pitch;
+        const currentCamera = this.getCamera();
+        if (cameraStateEqual(currentCamera, normalizedCamera)) {
+            return;
         }
 
         this._config = {
             ...this._config,
             map: {
                 ...this._config.map,
-                center: [camera.center[0], camera.center[1]],
-                zoom: camera.zoom,
-                pitch: camera.pitch,
-                bearing: camera.bearing,
+                center: [
+                    normalizedCamera.center[0],
+                    normalizedCamera.center[1],
+                ],
+                zoom: normalizedCamera.zoom,
+                pitch: normalizedCamera.pitch,
+                bearing: normalizedCamera.bearing,
             },
         };
 
         if (this.mapboxGL) {
             this.mapboxGL.jumpTo({
-                center: camera.center,
-                zoom: camera.zoom,
-                pitch: camera.pitch,
-                bearing: camera.bearing,
+                center: normalizedCamera.center,
+                zoom: normalizedCamera.zoom,
+                pitch: normalizedCamera.pitch,
+                bearing: normalizedCamera.bearing,
             });
         }
     }
